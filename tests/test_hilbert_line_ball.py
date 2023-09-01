@@ -54,14 +54,17 @@ class Test_Weird(TestCase):
         plt.axline(l.p, l.q, color='orange')
         tools.plot_congruent(plt, self.o.vertices, color='blue')
         plt.show()
-        tools.plot_congruent(plt, self.o.vertices)
+        tools.plot_congruent(plt, self.o.vertices, color='blue')
         hilbert_ball = l.hilbert_ball_about_line(1, plt)
         tools.plot_congruent(plt, hilbert_ball)
         plt.scatter(*l.p)
         plt.scatter(*l.q)
+        # print("Len of l. ball spokes, in test,", len(l.get_ball_spokes()))
         for bs in l.get_ball_spokes(plt):
             a, b = bs[1], bs[2]
             tools.plot_line(plt, a, b, color='gray')
+            tools.plot_line(plt, bs[0], a, color='purple')
+            tools.plot_line(plt, bs[0], b, color='red')
         plt.axline(l.p, l.q, color='orange')
         tools.plot_congruent(plt, self.o.vertices, color='blue')
         plt.show()

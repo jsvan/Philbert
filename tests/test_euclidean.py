@@ -42,3 +42,36 @@ class Test_Intersect(TestCase):
         tools.plot_line(plt, z, sa)
         plt.scatter([z[0], sa[0], sb[0], la[0], lb[0]], [z[1],sa[1], sb[1], la[1], lb[1]])
         plt.show()
+
+class Test_Point_On_Line(TestCase):
+
+    def test_online(self):
+        p = np.array([0.2, 0.4])
+        l = np.array([0.1, 0.4]), np.array([0.3, 0.4])
+        self.assertTrue(euclidean.point_on_line(p, l, segment=True))
+
+    def test_toofar(self):
+        p = np.array([0.4, 0.4])
+        l = np.array([0.1, 0.4]), np.array([0.3, 0.4])
+        self.assertFalse(euclidean.point_on_line(p, l, segment=True))
+
+    def test_offline(self):
+        p = np.array([0.2, 0.5])
+        l = np.array([0.1, 0.4]), np.array([0.3, 0.4])
+        self.assertFalse(euclidean.point_on_line(p, l, segment=True))
+
+    def test_toofar_inagoodway(self):
+        p = np.array([0.4, 0.4])
+        l = np.array([0.1, 0.4]), np.array([0.3, 0.4])
+        self.assertTrue(euclidean.point_on_line(p, l, segment=False))
+
+    def test_vert(self):
+        p = np.array([0., 0.4])
+        l = np.array([0, 0]), np.array([0, 1])
+        self.assertTrue(euclidean.point_on_line(p, l, segment=True))
+
+    def test_diag(self):
+        p = np.array([0.6, 0.4])
+        l = np.array([0, 1]), np.array([1, 0])
+        self.assertTrue(euclidean.point_on_line(p, l, segment=True))
+
