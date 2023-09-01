@@ -17,6 +17,7 @@ def hdist_to_euc(p, A, B, hdist):
    # a, b = p    # not actually needed
    slope = p - A  # slope or diff or whatever
    flip = slope[0] == 0
+   # This is how i deal with vertical divide by 0 issues. Pretend it's horizontal!
    if flip:  # vertical
       p = np.flip(p)
       A = np.flip(A)
@@ -26,6 +27,10 @@ def hdist_to_euc(p, A, B, hdist):
    c, d = slope
    k = (A[0] - p[0]) / c
    s = (B[0] - p[0]) / c
+
+   # if B is p, then the equation will return inf. Better if it returns 0.
+   if s == 0:
+      return B
    K = (pow(the_E, 2 * hdist) * (pow(k * c, 2) + pow(k * d, 2))) / (pow(s * c, 2) + pow(s * d, 2))
    t = (-k - sqrt((K * pow(k - s, 2))) + K * s) / (-1 + K)
    point = p + (t * slope)
@@ -111,10 +116,12 @@ def ordered_double_intersect(p, q, boundaries):
       euclidean.intersect([p, q], boundaries[1])
    # This is if A and B are swapped, which is handy because my discovery algorithm doesn't handle orientation for me
    # even though ironically it uses something called the orient() algorithm a dozen times ...
+   """
    pB = norm(p - B)
    qB = norm(q - B)
    if qB > pB:
       A, B = B, A
+   """
    return A, B
 
 

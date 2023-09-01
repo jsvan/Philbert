@@ -116,4 +116,5 @@ def plot_line(plt, a, b, color=None):
     :param b:
     :return:
     """
-    plt.plot([a[X], b[X]], [a[Y], b[Y]], color=color)
+    if plt is not None:
+        plt.plot([a[X], b[X]], [a[Y], b[Y]], color=color)

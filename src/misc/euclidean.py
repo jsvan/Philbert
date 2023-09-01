@@ -25,7 +25,6 @@ def tangent_dot(v, p, q):
 
     :return: float
     """
-    print("DOT tan, pivot, q", v,p,q, np.dot(q-p, v-p))
     return np.dot(q-p, v-p)
 
 def cos(v, p, q):
@@ -102,12 +101,12 @@ def norm_towards_q(p1, p2, q):
     return ns[np.dot(q - p1, ns[0]) < 0]
 
 def point_on_line(p, l, segment=False):
+    a, b = l
     if segment and \
-        (max(l[0][Y], l[1][Y]) < p[Y] < min(l[0][Y], l[1][Y]) or
-         max(l[0][X], l[1][X]) < p[X] < min(l[0][X], l[1][X])):
+       not (min(a[Y], b[Y]) <= p[Y] <= max(a[Y], b[Y]) and
+         min(a[X], b[X]) <= p[X] <= max(a[X], b[X])):
         return False
-    m = (l[0][Y] - l[1][Y]) / (l[1][X] - l[1][X])
-    return p[Y] == m * p[X]
+    return np.isclose( (b[X] - a[X]) * (p[Y] - a[Y]), (b[Y] - a[Y]) * (p[X] - a[X]))
 
 def point_below_line(p, l):
     a, b = l

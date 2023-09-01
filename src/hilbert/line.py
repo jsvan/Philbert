@@ -1,6 +1,7 @@
 from misc import euclidean, tools, graham_scan
 from hilbert import geometry
 import numpy as np
+from pprint import pprint
 import operator
 
 
@@ -54,12 +55,16 @@ class Line:
         :return: list of (tuple tuple tuple), ie (intersection, a, b)
         """
 
+        def add_if_absent(intersection, a, b):
+            key = tuple(sorted([tuple(a), tuple(b)]))
+            if key not in seen:
+                seen.add(key)
+                connections.append([intersection, key[0], key[1]])
+
         def connect_tangents(segments, tangent_points, plt=None):
-            print("Segments:", segments)
-            print("Tangent possibilities: ", tangent_points)
-            if plt is not None:
-                for i, v in enumerate(segments):
-                    plt.annotate(str(i), v)
+            # if plt is not None:
+            #    for i, v in enumerate(segments):
+            #        plt.annotate(str(i), v)
 
             for i in range(len(segments) - 1):
                 ii = i + 1
@@ -71,9 +76,6 @@ class Line:
                 dots = np.apply_along_axis(lambda x: abs(euclidean.cos(x, intersectpoint, self.q)), 1, tangent_points)
                 bestidx = np.argmin(dots)
                 bestvertex = tangent_points[bestidx]
-                print("dots", dots)
-                print("intersection:", intersectpoint)
-                print("best idx:", bestidx, ", best vertex", bestvertex)
 
                 if plt is not None:
                     tools.plot_line(plt, intersectpoint, segment[0], color='yellow')
@@ -81,45 +83,66 @@ class Line:
                 intersection_1 = euclidean.intersect((bestvertex, segment[1]), self.l)
                 # Putting into set because might be repeats, dunno
                 # All np.arrays must be tuples to be hashed.
-                connections.append([intersection_0, bestvertex, segment[0]])
-                connections.append([intersection_1, bestvertex, segment[1]])
+                key = (tuple(bestvertex), tuple(segment[0]))
+                add_if_absent(intersection_0, bestvertex, segment[0])
+                add_if_absent(intersection_1, bestvertex, segment[1])
 
-        connections = [[self.A, *self.get_boundaries()[0]],
-                        [self.B, *self.get_boundaries()[1]]]
-
+        seen = set()
         self.get_boundary_intersections()
+        # BUG: With simplexes, A and B are correct. With the more complicated space, they should be swapped.
+        #print("Is A in it's proper place?", euclidean.point_on_line(self.A, self.get_boundaries()[0]))
+        #print("Is B in it's proper place?", euclidean.point_on_line(self.B, self.get_boundaries()[1]))
 
+        connections = []
+
+        add_if_absent(self.A, *self.get_boundaries()[0])
+        add_if_absent(self.B, *self.get_boundaries()[1])
 
         # First divide vertices into two groups
-        points_above_l, points_below_l = [], []
+        points_above_l_before, points_below_l_before, points_above_l_after, points_below_l_after  = [], [], [], []
+        loadingpoints = [points_above_l_before, points_below_l_before]
+
         for v in self.omega.vertices:
             if euclidean.point_below_line(v, self.l):
-                points_below_l.append(v)
+                #points_below_l.append(v)
+                loadingpoints[1].append(v)
+                if len(loadingpoints[0]) > 0:
+                    loadingpoints[0] = points_above_l_after
             else:
-                points_above_l.append(v)
-        points_below_l = points_below_l[1:] + [points_below_l[0]]
-        print(points_below_l)
+                #points_above_l.append(v)
+                loadingpoints[0].append(v)
+                if len(loadingpoints[1]) > 0:
+                    loadingpoints[1] = points_below_l_after
+
+        points_above_l = points_above_l_after + points_above_l_before
+        points_below_l = points_below_l_after + points_below_l_before
+        # points_below_l = points_below_l[1:] + [points_below_l[0]]
         connect_tangents(points_above_l, points_below_l, plt)
         connect_tangents(points_below_l, points_above_l, plt)
         self.ball_spokes = connections
+        #print("BALL SPOKES, len", len(self.ball_spokes), ":")
+        #pprint(self.ball_spokes)
         return self.ball_spokes
 
     def hilbert_ball_about_line(self, radius, plt=None):
         ballpoints = []
         i=0
-        print(self.get_ball_spokes())
+        # pprint(self.get_ball_spokes())
         for intersection, A, B in self.get_ball_spokes():
-            p1 = geometry.hdist_to_euc(np.array(intersection), np.array(A), np.array(B), radius)
+            p1 = geometry.hdist_to_euc(intersection, A, B, radius)
             ballpoints.append(p1)
+            tools.plot_line(plt,A, B, color='red')
             p2 = geometry.hdist_to_euc(np.array(intersection), np.array(A), np.array(B), -radius)
             ballpoints.append(p2)
             if plt:
                 plt.scatter(p1[0], p1[1])
                 plt.scatter(p2[0], p2[1])
-                plt.annotate('*'+str(i), p1)
-                plt.annotate('*'+str(-i), p2)
+                plt.annotate(str(i), p1)
+                plt.annotate(str(-i), p2)
                 i+=1
 
         ballpoints = [x for x in ballpoints if not np.isnan(x).any()]
         gs = graham_scan.graham_scan(ballpoints)
         return gs
+
+
