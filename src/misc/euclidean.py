@@ -16,6 +16,7 @@ def is_tangent_orient(p, vm1, v, vp1):
         o = CLOCKWISE
     return orient(p, v, vp1) == o
 
+
 def tangent_dot(v, p, q):
     """
     point p lies on line l, which passes through omega. Pivot point.
@@ -26,6 +27,7 @@ def tangent_dot(v, p, q):
     :return: float
     """
     return np.dot(q-p, v-p)
+
 
 def cos(v, p, q):
     """
@@ -41,6 +43,7 @@ def cos(v, p, q):
     a = v - p
     b = q - p
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
 
 def orient(p, q, r):
     """
@@ -100,6 +103,7 @@ def norm_towards_q(p1, p2, q):
     ns = line_segment_normal(p1, p2)
     return ns[np.dot(q - p1, ns[0]) < 0]
 
+
 def point_on_line(p, l, segment=False):
     a, b = l
     if segment and \
@@ -108,6 +112,7 @@ def point_on_line(p, l, segment=False):
         return False
     return np.isclose((b[X] - a[X]) * (p[Y] - a[Y]),
                       (b[Y] - a[Y]) * (p[X] - a[X]))
+
 
 def point_below_line(p, l):
     a, b = l

@@ -53,7 +53,9 @@ class Line:
         ba, bb = self.get_boundaries()
         vanishing_point = euclidean.intersect(ba, bb)
         other_point = vanishing_point
-        # the vertexes of the boundaries of Omega crossed by the line, ie, self.get_boundaries, can be combined to make
+        # Unnecessary, can use either point, somehow it all works.
+        # But I do this point because the pyplots lay better.
+        # The vertexes of the boundaries of Omega crossed by the line, ie, self.get_boundaries, can be combined to make
         # spokes that are within the convex shape, or on its edges.
         # Moving Epsilon inside could be hard because we'd have to move epsilon in the right direction. However, if
         # we draw a spoke from the Euclidean midpoints of those boundaries, those should always be inside the convex
@@ -77,17 +79,11 @@ class Line:
                 connections.append([intersection, a, b])
 
         def connect_tangents(segments, tangent_points, plt=None):
-            # if plt is not None:
-            #    for i, v in enumerate(segments):
-            #        plt.annotate(str(i), v)
 
             for i in range(len(segments) - 1):
                 ii = i + 1
                 segment = (segments[i], segments[ii])
                 intersectpoint = euclidean.intersect(self.l, segment)
-                #bestvertex, dot, index = tools.bs_on_points(
-                #    tangent_points, lambda v: euclidean.tangent_dot(v, intersectpoint, self.q), operator.gt)
-                # dots = np.apply_along_axis(lambda x: abs(euclidean.tangent_dot(x, intersectpoint, self.q)), 1, tangent_points)
                 dots = np.apply_along_axis(lambda x: abs(euclidean.cos(x, intersectpoint, self.q)), 1, tangent_points)
                 bestidx = np.argmin(dots)
                 bestvertex = tangent_points[bestidx]
@@ -104,14 +100,7 @@ class Line:
 
         seen = set()
         self.get_boundary_intersections()
-        # BUG: With simplexes, A and B are correct. With the more complicated space, they should be swapped.
-        #print("Is A in it's proper place?", euclidean.point_on_line(self.A, self.get_boundaries()[0]))
-        #print("Is B in it's proper place?", euclidean.point_on_line(self.B, self.get_boundaries()[1]))
-
         connections = []
-
-        # add_if_absent(self.A, *self.get_boundaries()[0])
-        # add_if_absent(self.B, *self.get_boundaries()[1])
 
         # First divide vertices into two groups
         points_above_l_before, points_below_l_before, points_above_l_after, points_below_l_after  = [], [], [], []
@@ -131,18 +120,14 @@ class Line:
 
         points_above_l = points_above_l_after + points_above_l_before
         points_below_l = points_below_l_after + points_below_l_before
-        # points_below_l = points_below_l[1:] + [points_below_l[0]]
         connect_tangents(points_above_l, points_below_l, plt)
         connect_tangents(points_below_l, points_above_l, plt)
         self.ball_spokes = connections
-        #print("BALL SPOKES, len", len(self.ball_spokes), ":")
-        #pprint(self.ball_spokes)
         return self.ball_spokes
 
     def hilbert_ball_about_line(self, radius, plt=None):
         ballpoints = []
         i=0
-        # pprint(self.get_ball_spokes())
         for intersection, A, B in self.get_ball_spokes():
             p1 = geometry.hdist_to_euc(intersection, A, B, radius)
             ballpoints.append(p1)

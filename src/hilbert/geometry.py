@@ -2,7 +2,7 @@ from math import sqrt, log
 from math import e as the_E
 import numpy as np
 from numpy.linalg import norm
-from misc import graham_scan, euclidean, tools
+from misc import graham_scan, euclidean
 
 
 def hdist_to_euc(p, A, B, hdist):
