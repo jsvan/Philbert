@@ -3,7 +3,7 @@ import numpy as np
 COUNTER_CW = 1
 CLOCKWISE = -1
 X, Y = 0, 1
-
+EPS = 0.00001
 
 def det(a, b, c, d):
     return (a*d) - (b*c)
@@ -103,10 +103,11 @@ def norm_towards_q(p1, p2, q):
 def point_on_line(p, l, segment=False):
     a, b = l
     if segment and \
-       not (min(a[Y], b[Y]) <= p[Y] <= max(a[Y], b[Y]) and
-         min(a[X], b[X]) <= p[X] <= max(a[X], b[X])):
+       not (min(a[Y], b[Y]) - EPS <= p[Y] <= max(a[Y], b[Y]) + EPS and
+            min(a[X], b[X]) - EPS <= p[X] <= max(a[X], b[X]) + EPS):
         return False
-    return np.isclose( (b[X] - a[X]) * (p[Y] - a[Y]), (b[Y] - a[Y]) * (p[X] - a[X]))
+    return np.isclose((b[X] - a[X]) * (p[Y] - a[Y]),
+                      (b[Y] - a[Y]) * (p[X] - a[X]))
 
 def point_below_line(p, l):
     a, b = l

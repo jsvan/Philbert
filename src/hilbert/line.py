@@ -9,16 +9,19 @@ EPSILON = 0.0001
 class Line:
 
     def __init__(self, p, q, omega):
-        self.p, self.q = p, q
-        self.l = p, q
         self.omega = omega
+        self.p, self.q = np.array(p), np.array(q)
+        self.l = self.p, self.q
         self.midpoint = None
         self.boundaries = None
+        self.ball_spokes = None
         # between p and q
         self.hdist = None
         # boundary intersections
         self.A, self.B = None, None
-        self.ball_spokes = None
+        # Check if point way outside, set it to intersection with boundary...
+
+
 
     def get_boundaries(self):
         if self.boundaries is None:
@@ -47,8 +50,20 @@ class Line:
         return self.A, self.B
 
     def get_best_dividing_line(self):
-        vanishing_point = euclidean.intersect(*self.get_boundaries())
-        return [self.get_midpoint(), vanishing_point]
+        ba, bb = self.get_boundaries()
+        vanishing_point = euclidean.intersect(ba, bb)
+        other_point = vanishing_point
+        # the vertexes of the boundaries of Omega crossed by the line, ie, self.get_boundaries, can be combined to make
+        # spokes that are within the convex shape, or on its edges.
+        # Moving Epsilon inside could be hard because we'd have to move epsilon in the right direction. However, if
+        # we draw a spoke from the Euclidean midpoints of those boundaries, those should always be inside the convex
+        # shape. Take the intersection of the midpoints of the boundaries with the line from MIDPOINT to VANISHING.
+        # That intersection will be on the line, and inside the convex shape.
+        # That way, if these points are placed back into Omega, they will be within the Omega.
+        bam = (ba[0] + ba[1]) / 2
+        bbm = (bb[0] + bb[1]) / 2
+        other_point = euclidean.intersect([self.get_midpoint(), vanishing_point], [bam, bbm])
+        return [self.get_midpoint(), other_point]
 
     def get_ball_spokes(self, plt=None):
         """
@@ -59,7 +74,7 @@ class Line:
             key = tuple(sorted([tuple(a), tuple(b)]))
             if key not in seen:
                 seen.add(key)
-                connections.append([intersection, key[0], key[1]])
+                connections.append([intersection, a, b])
 
         def connect_tangents(segments, tangent_points, plt=None):
             # if plt is not None:
@@ -95,8 +110,8 @@ class Line:
 
         connections = []
 
-        add_if_absent(self.A, *self.get_boundaries()[0])
-        add_if_absent(self.B, *self.get_boundaries()[1])
+        # add_if_absent(self.A, *self.get_boundaries()[0])
+        # add_if_absent(self.B, *self.get_boundaries()[1])
 
         # First divide vertices into two groups
         points_above_l_before, points_below_l_before, points_above_l_after, points_below_l_after  = [], [], [], []

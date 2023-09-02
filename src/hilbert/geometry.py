@@ -15,14 +15,14 @@ def hdist_to_euc(p, A, B, hdist):
    q = (a + tc, b + td)
    """
    # a, b = p    # not actually needed
-   slope = p - A  # slope or diff or whatever
+   slope = p - B if np.isclose(p, A).all() else p - A  # slope or diff or whatever
    flip = slope[0] == 0
    # This is how i deal with vertical divide by 0 issues. Pretend it's horizontal!
    if flip:  # vertical
       p = np.flip(p)
       A = np.flip(A)
       B = np.flip(B)
-      slope = p - A
+      slope = np.flip(slope)
 
    c, d = slope
    k = (A[0] - p[0]) / c

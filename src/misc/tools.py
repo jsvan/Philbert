@@ -118,3 +118,14 @@ def plot_line(plt, a, b, color=None):
     """
     if plt is not None:
         plt.plot([a[X], b[X]], [a[Y], b[Y]], color=color)
+
+
+def scatter(plt, points):
+    for p in points:
+        plt.scatter(*p)
+
+
+def annotate(plt, names, points):
+    assert len(names) == len(points)
+    for i in range(len(names)):
+        plt.annotate(names[i], points[i])

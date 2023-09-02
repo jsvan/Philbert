@@ -1,12 +1,12 @@
 import numpy as np
-from src.misc import tools, euclidean
-
+from misc import tools, euclidean
+from misc.graham_scan import graham_scan
 class Omega:
 
-    def __init__(self, vertices=[np.array(x) for x in [[0, 0], [0, 1], [1, 0]] ]):
-        self.vertices = vertices
+    def __init__(self, vertices=([0, 0], [0, 1], [1, 0]) ):
+        self.vertices = graham_scan([np.array(v) for v in vertices])
         # This is a hack for binary search, wraps around the final points. Whatever.
-        self.vertices_expanded = [vertices[-1]] + vertices + [vertices[0]]
+        self.vertices_expanded = [self.vertices[-1]] + self.vertices + [self.vertices[0]]
 
     def spokes(self, p):
         """
@@ -24,7 +24,7 @@ class Omega:
         """
         return self.find_boundary(p, q), self.find_boundary(q, p)
 
-    def find_boundary(self, p ,q):
+    def find_boundary(self, p, q):
         v = self.vertices_expanded
         numvert = len(v)
         binarysearch = tools.BinarySearcher(0, numvert, discrete=True)
