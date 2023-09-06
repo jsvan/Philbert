@@ -1,8 +1,6 @@
-from misc import euclidean, tools, graham_scan
-from hilbert import geometry
+from misc import euclidean, tools
+from hilbert import geometry, polygon
 import numpy as np
-from pprint import pprint
-import operator
 
 
 EPSILON = 0.0001
@@ -53,8 +51,9 @@ class Line:
         ba, bb = self.get_boundaries()
         vanishing_point = euclidean.intersect(ba, bb)
         other_point = vanishing_point
-        # Unnecessary, can use either point, somehow it all works.
+        # Other point is unnecessary, can use either point, somehow it all works.
         # But I do this point because the pyplots lay better.
+        # This point takes the vanishing point and maps it along its line to a point inside omega.
         # The vertexes of the boundaries of Omega crossed by the line, ie, self.get_boundaries, can be combined to make
         # spokes that are within the convex shape, or on its edges.
         # Moving Epsilon inside could be hard because we'd have to move epsilon in the right direction. However, if
@@ -84,6 +83,9 @@ class Line:
                 ii = i + 1
                 segment = (segments[i], segments[ii])
                 intersectpoint = euclidean.intersect(self.l, segment)
+                #bestvertex, dot, index = tools.bs_on_points(
+                #    tangent_points, lambda v: euclidean.tangent_dot(v, intersectpoint, self.q), operator.gt)
+                # dots = np.apply_along_axis(lambda x: abs(euclidean.tangent_dot(x, intersectpoint, self.q)), 1, tangent_points)
                 dots = np.apply_along_axis(lambda x: abs(euclidean.cos(x, intersectpoint, self.q)), 1, tangent_points)
                 bestidx = np.argmin(dots)
                 bestvertex = tangent_points[bestidx]
@@ -94,26 +96,22 @@ class Line:
                 intersection_1 = euclidean.intersect((bestvertex, segment[1]), self.l)
                 # Putting into set because might be repeats, dunno
                 # All np.arrays must be tuples to be hashed.
-                key = (tuple(bestvertex), tuple(segment[0]))
                 add_if_absent(intersection_0, bestvertex, segment[0])
                 add_if_absent(intersection_1, bestvertex, segment[1])
 
         seen = set()
         self.get_boundary_intersections()
         connections = []
-
         # First divide vertices into two groups
         points_above_l_before, points_below_l_before, points_above_l_after, points_below_l_after  = [], [], [], []
         loadingpoints = [points_above_l_before, points_below_l_before]
 
         for v in self.omega.vertices:
             if euclidean.point_below_line(v, self.l):
-                #points_below_l.append(v)
                 loadingpoints[1].append(v)
                 if len(loadingpoints[0]) > 0:
                     loadingpoints[0] = points_above_l_after
             else:
-                #points_above_l.append(v)
                 loadingpoints[0].append(v)
                 if len(loadingpoints[1]) > 0:
                     loadingpoints[1] = points_below_l_after
@@ -139,10 +137,10 @@ class Line:
                 plt.scatter(p2[0], p2[1])
                 plt.annotate(str(i), p1)
                 plt.annotate(str(-i), p2)
-                i+=1
+                i += 1
 
         ballpoints = [x for x in ballpoints if not np.isnan(x).any()]
-        gs = graham_scan.graham_scan(ballpoints)
+        gs = polygon.Polygon(ballpoints)
         return gs
 
 
