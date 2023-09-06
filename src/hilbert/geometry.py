@@ -2,7 +2,7 @@ from math import sqrt, log
 from math import e as the_E
 import numpy as np
 from numpy.linalg import norm
-from misc import graham_scan, euclidean
+from misc import euclidean
 
 
 def hdist_to_euc(p, A, B, hdist):
@@ -54,20 +54,6 @@ def nielson_dist(p, q):
    t1 = lamb[lamb >= 1].min()  # t1 = resulting min element bigger than 1
    if np.isclose(t0, 0) or np.isclose(t1, 1): return np.inf  # From here on idk
    return np.abs(np.log(1 - 1 / t0) - np.log(1 - 1 / t1)) # mathematically equivalent to dist algorithm tested and approved
-
-
-def hilbert_ball_around_point(p, omega, r):
-   spokes = omega.spokes(p)
-   # I think it's best to find the q point on every spoke, instead of connecting to vanishing points.
-   # Vanishing points require binary search probably for every spoke intersection (on opposite side).
-   # That may not actually be slower, but this is simpler in code for sure.
-   points = []
-   for v, _ in spokes:
-      boundaries = omega.find_both_boundary_intersections_of_line(p, v)
-      intersections = ordered_double_intersect(p, v, boundaries)
-      points.append(hdist_to_euc(p, *intersections, r))
-      points.append(hdist_to_euc(p, *intersections, -r))
-   return graham_scan.graham_scan(points)
 
 
 def dist(p, q, A, B):

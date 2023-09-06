@@ -5,6 +5,13 @@ CLOCKWISE = -1
 X, Y = 0, 1
 EPS = 0.00001
 
+def dname(w):
+    if w == COUNTER_CW:
+        return "COUNTER_CW"
+    if w == CLOCKWISE:
+        return "CLOCKWISE"
+    return "None"
+
 def det(a, b, c, d):
     return (a*d) - (b*c)
 
@@ -117,3 +124,8 @@ def point_on_line(p, l, segment=False):
 def point_below_line(p, l):
     a, b = l
     return (b[X] - a[X])*(p[Y] - a[Y]) < (b[Y] - a[Y])*(p[X] - a[X])
+
+def eq(p1, p2):
+    if p1 is None or p2 is None:
+        return False
+    return np.isclose(p1, p2).all()

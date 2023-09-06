@@ -1,0 +1,9 @@
+1) Tangent software
+    1a) experiment a) How do tangents of two balls change as radius grows?
+    1b) experiment b) How does tangent of two balls compare to hilbert ball around line?
+
+2) Interactive plots
+    2a) Plotly?
+    2b) Hilbert balls around points
+    2c) Hilbert balls around lines
+

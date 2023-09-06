@@ -1,6 +1,9 @@
 from misc.euclidean import orient as direction
 from functools import cmp_to_key
 
+# Taken from https://algorithmtutor.com/Computational-Geometry/Convex-Hull-Algorithms-Graham-Scan/
+
+
 def find_min_y(points):
     miny = 999999
     mini = 0
