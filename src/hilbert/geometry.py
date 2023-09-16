@@ -4,6 +4,7 @@ import numpy as np
 from numpy.linalg import norm
 from misc import euclidean
 
+"""Mapping isometry onto euclidean?"""
 
 def hdist_to_euc(p, A, B, hdist):
    """ This is solving the hilbert distance for t

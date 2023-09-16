@@ -1,5 +1,6 @@
 from operator import truediv, floordiv
 import numpy as np
+
 X, Y = 0, 1
 
 def namer(i):
@@ -12,15 +13,18 @@ class BinarySearcher:
     """
     [mini, maxi)
     inclusive, exclusive
+    Rotate changes the first index that's expelled. Instead of producing the median index, it will dial it forwards or
+    if negative backwards.
     """
-    def __init__(self, mini, maxi, discrete=False):
+    def __init__(self, mini, maxi, discrete=False, rotate=0):
         if mini > maxi:
             mini, maxi = maxi, mini
         self.mini = mini
         self.maxi = maxi
         self.discrete = discrete
         self.divisor = floordiv if self.discrete else truediv
-        self.mid = self.calc_mid()
+        self.mid = self.calc_mid() if rotate == 0 else ((self.calc_mid() + rotate - self.mini) % (self.maxi - self.mini ) ) + self.mini
+
 
     def calc_mid(self):
         return self.divisor((self.maxi - self.mini), 2) + self.mini
@@ -32,7 +36,7 @@ class BinarySearcher:
     higher is a boolean
     """
     def feedback(self, higher):
-        if (self.discrete and self.mini == self.maxi) or \
+        if (self.discrete and (self.mini + 1) == self.maxi) or \
                 (not self.discrete and np.isclose(self.mini, self.maxi)):
             raise StopIteration
 
@@ -69,6 +73,7 @@ def bs_on_points(vertices, transform, comparator):
         prev_max_i = partition
 
     bs = BinarySearcher(start, end, discrete=True)
+
     while True:
         i = bs.next()
         vertex = vertices[i]
@@ -87,9 +92,10 @@ def bs_on_points(vertices, transform, comparator):
     return vertex, a, i
 
 
-def i_ii(n):
+def i_ii(n, connect_ends=True):
     # generator
-    return ((i, (i + 1) % n) for i in range(n))
+    mn = n if connect_ends else n-1
+    return ((i, (i + 1) % n) for i in range(mn))
 
 
 def sortnparray(a, b):
@@ -103,8 +109,8 @@ def sortnparray(a, b):
     return a, b
 
 
-def plot_congruent(plt, vertices, color=None):
-    for i, ii in i_ii(len(vertices)):
+def plot_congruent(plt, vertices, color=None, connect_ends=True):
+    for i, ii in i_ii(len(vertices), connect_ends):
         plot_line(plt, vertices[i], vertices[ii], color=color)
 
 def plot_line(plt, a, b, color=None):
@@ -126,8 +132,24 @@ def scatter(plt, points):
             plt.scatter(*p)
 
 
-def annotate(plt, names, points):
+def annotate(plt, names, points, seen={}):
     assert len(names) == len(points)
     for i in range(len(names)):
+        old = ""
         if points[i] is not None:
-            plt.annotate(names[i], points[i])
+            key = tuple(points[i])
+            new = str(names[i])
+            if key in seen:
+                old = seen[key].get_text()
+                seen[key].remove()
+                if old == new:
+                    old = ""
+            seen[key] = plt.annotate(old + new, points[i])
+
+    return seen
+
+
+
+def rand_points(how_many):
+    return [x[:2] for x in np.random.dirichlet([1,1,1], how_many)]
+

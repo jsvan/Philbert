@@ -1,4 +1,5 @@
 import numpy as np
+from misc import tools
 
 COUNTER_CW = 1
 CLOCKWISE = -1
@@ -16,12 +17,16 @@ def det(a, b, c, d):
     return (a*d) - (b*c)
 
 
-def is_tangent_orient(p, vm1, v, vp1):
-    o = COUNTER_CW
-    if orient(p, vm1, v) == COUNTER_CW:
-        #positive side of l
-        o = CLOCKWISE
-    return orient(p, v, vp1) == o
+def quick_is_outside(point, vm1, v, vp1):
+    """
+    Tells if a point is on the "interior" of a "v" formed by 3 vertices.
+
+    A limited version of the polygon's "contains()", but is O(1) rather than O(vertices)
+
+    Returns boolean True if point is on the exterior of the "v", and False if on within the inside rays of the "v"
+    """
+    bad = orient(point, v, vm1) == COUNTER_CW and orient(point, v, vp1) == CLOCKWISE
+    return not bad
 
 
 def tangent_dot(v, p, q):
@@ -125,7 +130,47 @@ def point_below_line(p, l):
     a, b = l
     return (b[X] - a[X])*(p[Y] - a[Y]) < (b[Y] - a[Y])*(p[X] - a[X])
 
+def point_within_region(p, A, B):
+    """
+    This is my stupid optimization, checks that a point is on a line INSIDE of omega, by making sure no
+    dimension of the point is more extreme than of A or B
+    """
+    for i in range(len(p)):
+        if not (A[i] >= p[i] >= B[i] or A[i] <= p[i] <= B[i]):
+            return False
+    return True
+
 def eq(p1, p2):
     if p1 is None or p2 is None:
         return False
     return np.isclose(p1, p2).all()
+
+
+def get_point_on_line(p, q, dist):
+    """
+    returns point dist away from p, on line through q
+    dist==0 is point p
+    dist==1 is point q
+    """
+    slope = q - p
+    return p + dist*slope
+
+
+
+def uniform_sample_from_line_segments(segs, startfloor=0):
+    distances = [np.linalg.norm(segs[ii] - segs[i]) for i, ii in tools.i_ii(len(segs), connect_ends=False)]
+    tot = sum(distances)
+    if startfloor >= tot:
+        raise Exception(f"Starting at a point {startfloor} greater than the allowed length of {tot}")
+    cumulative = np.random.uniform(startfloor, tot)
+    cum = cumulative
+    for i in range(len(distances)):
+        if cum > distances[i]:
+            cum -= distances[i]
+        else:
+            # sample point on line segment at cum ratio
+            p, q = segs[i], segs[i+1]
+            ratio = cum / distances[i]
+            return get_point_on_line(p, q, ratio), cumulative
+
+    raise Exception(f"euclidean Exception, point {cumulative} from length of {tot} not found in segments {segs}.")

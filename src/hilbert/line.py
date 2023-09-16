@@ -1,7 +1,8 @@
 from misc import euclidean, tools
 from hilbert import geometry, polygon
 import numpy as np
-
+import operator
+from pprint import pprint
 
 EPSILON = 0.0001
 class Line:
@@ -19,6 +20,38 @@ class Line:
         self.A, self.B = None, None
         # Check if point way outside, set it to intersection with boundary...
 
+
+    def nearest_point(self, p, plt=None):
+        """
+        This is the binary search version, which i am not going to use because ordering the points is difficult
+
+        intersectionpoints = [euclidean.intersect((p, v), (self.p, self.q)) for v in self.omega.vertices ]
+        def transform(x):
+            l = Line(x, self.p, self.omega)
+            A, B = l.get_boundary_intersections()
+            return geometry.dist(x, p, A, B)
+        return tools.bs_on_points(intersectionpoints, transform, operator.lt)
+        """
+        intersectionpoints = [euclidean.intersect((p, v), (self.p, self.q)) for v in self.omega.vertices ]
+        def transform(x):
+            """
+            x is a point
+            output is the distance from p to x. If outside the OMEGA, infinity.
+            """
+            l = Line(x, p, self.omega)
+            A, B = l.get_boundary_intersections()
+            return geometry.dist(x, p, A, B) if euclidean.point_within_region(x, *self.get_boundary_intersections()) else np.inf
+        distances = [transform(x) for x in intersectionpoints]
+        print("distances", distances)
+        if plt is not None:
+            tools.scatter(plt, [x for i, x in enumerate(intersectionpoints) if not np.isinf(distances[i])])
+
+        print(distances)
+        minidx = np.argmin(distances)
+        return intersectionpoints[minidx], distances[minidx], minidx
+
+
+    # def dist_to_p(self, p):
 
 
     def get_boundaries(self):
@@ -68,7 +101,9 @@ class Line:
 
     def get_ball_spokes(self, plt=None):
         """
+        Constructs the ball spokes for the hilbert ball around this line
         :return: list of (tuple tuple tuple), ie (intersection, a, b)
+        Currently runs in O(n) time, can be shifted to log(n), but that had some bugs
         """
 
         def add_if_absent(intersection, a, b):
@@ -129,10 +164,10 @@ class Line:
         for intersection, A, B in self.get_ball_spokes():
             p1 = geometry.hdist_to_euc(intersection, A, B, radius)
             ballpoints.append(p1)
-            tools.plot_line(plt,A, B, color='red')
             p2 = geometry.hdist_to_euc(np.array(intersection), np.array(A), np.array(B), -radius)
             ballpoints.append(p2)
             if plt:
+                tools.plot_line(plt, A, B, color='red')
                 plt.scatter(p1[0], p1[1])
                 plt.scatter(p2[0], p2[1])
                 plt.annotate(str(i), p1)

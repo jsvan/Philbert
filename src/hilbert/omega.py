@@ -68,11 +68,14 @@ class Omega:
        return polygon.Polygon(points)
 
 
-    def tangent_lines(self, poly1, poly2, plt=None):
+    def all_tangent_lines(self, poly1, poly2, plt=None):
         maxwards = [True, False]
-        tangents = {}
+        tangents = []
         for mws in itertools.product(maxwards, maxwards):
-            tangents[mws] = self.tangent_line(poly1, poly2, mws[0], mws[1], plt)
+            try:
+                tangents.append(self.tangent_line(poly1, poly2, mws[0], mws[1], plt))
+            except:
+                continue
 
         return tangents
 
@@ -80,18 +83,35 @@ class Omega:
 
     def tangent_line(self, poly1, poly2, maxwards1, maxwards2, plt=None):
 
+        removedpoly1, removedpoly2 = None, None  # on;ly one p[oint for each is necessary for orientaion test
+        newpoly1, newpoly2 = [], []
+        # This is a hack, remove overlapping points
+        for n in poly1.vertices:
+            if poly2.contains(n):
+                removedpoly1 = n
+            else:
+                newpoly1.append(n)
+        for n in poly2.vertices:
+            if poly1.contains(n):
+                removedpoly2 = n
+            else:
+                newpoly2.append(n)
+
+        poly1 = polygon.Polygon(newpoly1)
+        poly2 = polygon.Polygon(newpoly2)
         prev_v1, prev_v2 = None, None
         v1, v2 = poly1.vertices[0], None
         i = 0
         while not (euclidean.eq(v1, prev_v1) and euclidean.eq(v2, prev_v2)):
             prev_v1 = v1
             prev_v2 = v2
-            v2 = poly2.point_tangent_linear(v1, maxwards2)['v']
-
-            v1 = poly1.point_tangent_linear(v2, maxwards1)['v']
-
+            v2info = poly2.point_tangent_linear(v1, maxwards2)
+            v2 = v2info['v']
+            v1info = poly1.point_tangent_linear(v2, maxwards1)
+            v1 = v1info['v']
             if plt is not None:
                 tools.plot_line(plt, v1, v2)
                 tools.annotate(plt, [str(i)], [(v2 + v1) / 2])
             i += 1
-        return v1, v2
+        #if euclidean.orient(v1)
+        return v1info, v2info

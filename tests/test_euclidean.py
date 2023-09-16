@@ -75,3 +75,25 @@ class Test_Point_On_Line(TestCase):
         l = np.array([0, 1]), np.array([1, 0])
         self.assertTrue(euclidean.point_on_line(p, l, segment=True))
 
+    def test_get_point_on_line(self):
+        p = np.array([0.8, 0.2])
+        q = np.array([0.8, 0.4])
+        dist = 1
+        r = euclidean.get_point_on_line(p, q, dist)
+        tools.annotate(plt, 'pqr', [p, q, r])
+        tools.scatter(plt, [p, q, r])
+        tools.plot_congruent(plt, [(0,0), (0,1), (1,1), (1, 0)], color='gray')
+        plt.show()
+
+
+    def test_uniform_segment_sampling(self):
+        o = omega.Omega(vertices=[(1.4, 0.0),
+                                    (1.1, 0.8),
+                                    (0.6, 1.1),
+                                    (0.0, 1.2),
+                                    (-.5, 0.8),
+                                    (-.8, 0.3),
+                                    (-.7, -.2)])
+        point, dist = euclidean.uniform_sample_from_line_segments(o.vertices)
+        print(point, dist)
+

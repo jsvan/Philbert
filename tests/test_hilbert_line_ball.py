@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import hilbert.omega
 from src.hilbert import omega, line, geometry
-from src.misc import tools
+from src.misc import tools, euclidean
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -256,6 +256,54 @@ class Hilbert_Ball_Around_Points_and_Line(TestCase):
         p, q = [x[:2] for x in np.random.dirichlet((1, 1, 1), 2)]
         self.simplex(p, q)
 
+
+class Sample_Points_On_Ball(TestCase):
+    def test_weird(self):
+        o = omega.Omega(vertices=[(1.4, 0.0),
+                                  (1.1, 0.8),
+                                  (0.6, 1.1),
+                                  (0.0, 1.2),
+                                  (-.5, 0.8),
+                                  (-.8, 0.3),
+                                  (-.7, -.2)])
+        p, q = tools.rand_points(2)
+        l = line.Line(p, q, o)
+        ball = l.hilbert_ball_about_line(1)
+        above = [x for x in ball.vertices if euclidean.point_below_line(x, l.l)]
+        below = list(reversed([x for x in ball.vertices if not euclidean.point_below_line(x, l.l)]))
+        b1, dist = euclidean.uniform_sample_from_line_segments(above)
+        r, dist = euclidean.uniform_sample_from_line_segments(below, dist)
+        b2, dist = euclidean.uniform_sample_from_line_segments(above,dist)
+
+        tools.plot_congruent(plt, o.vertices, color='gray')
+        tools.plot_congruent(plt,ball.vertices, color='gray')
+        plt.axline(*l.l)
+
+        lpr = line.Line(b1, r, o)
+        ballpr = lpr.hilbert_ball_about_line(1)
+        lqr = line.Line(b2, r, o)
+        ballqr = lqr.hilbert_ball_about_line(1)
+        lpq = line.Line(b1, b2, o)
+        ballpq = lpq.hilbert_ball_about_line(1)
+        ballp = o.hilbert_ball_around_point(b1, 1)
+        ballq = o.hilbert_ball_around_point(b2, 1)
+        ballr = o.hilbert_ball_around_point(r, 1)
+
+
+        tools.plot_congruent(plt, ballpr.vertices, color="lightblue")
+        tools.plot_congruent(plt, ballqr.vertices, color="lightblue")
+        tools.plot_congruent(plt, ballpq.vertices, color="lightblue")
+        tools.plot_congruent(plt, ballp.vertices, color="green")
+        tools.plot_congruent(plt, ballq.vertices, color="green")
+        tools.plot_congruent(plt, ballr.vertices, color="green")
+
+
+
+
+
+        tools.scatter(plt, [b1, b2, r])
+        tools.annotate(plt, 'ppr', [b1, b2, r])
+        plt.show()
 
 
 if __name__ == "__main__":
