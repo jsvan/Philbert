@@ -3,16 +3,17 @@ import numpy as np
 from hilbert import line, polygon
 from hilbert.geometry import hdist_to_euc
 from misc import tools, euclidean
-from misc.graham_scan import graham_scan
 import itertools
 
 
 class Omega:
 
-    def __init__(self, vertices=([0, 0], [0, 1], [1, 0]) ):
-        self.vertices = graham_scan([np.array(v) for v in vertices])
+    def __init__(self, vertices=([0, 0], [0, 1], [1, 0]), offset=[0, 0] ):
+
+        self.polygon = polygon.Polygon(vertices, offset)
+        self.vertices = self.polygon.vertices
         # This is a hack for binary search, wraps around the final points. Whatever.
-        self.vertices_expanded = [self.vertices[-1]] + self.vertices + [self.vertices[0]]
+        self.vertices_expanded = self.polygon.vertices_expanded
 
     def spokes(self, p):
         """
@@ -20,36 +21,6 @@ class Omega:
         :return: list of tuples: (coords of the omega vertex, lambda equation for related spoke)
         """
         return [(v, lambda t: p + t * (p - np.array(v))) for v in self.vertices]
-
-    def line_boundaries(self, p, q):
-        """
-        Run orientation tests to find intersections with boundaries. Log time search.
-        :param p:
-        :param q:
-        :return: two lines, each of two points.
-        """
-        return self.find_boundary(p, q), self.find_boundary(q, p)
-
-    def find_boundary(self, p, q):
-        v = self.vertices_expanded
-        numvert = len(v)
-        binarysearch = tools.BinarySearcher(0, numvert, discrete=True)
-        attempts = numvert + 1
-
-        while attempts > 0:
-            attempts -= 1
-            leftidx = binarysearch.next()
-            leftv, rightv = v[leftidx], v[(leftidx + 1) % numvert]
-
-            if euclidean.orient(p, q, leftv) == euclidean.COUNTER_CW:  # BAD ORIENTATION
-                binarysearch.feedback(higher=False)
-                continue
-            if euclidean.orient(p, q, rightv) == euclidean.CLOCKWISE:
-                binarysearch.feedback(higher=True)
-                continue
-            return (leftv, rightv)
-        raise Exception("Finding boundary with binary search failed")
-
 
     def hilbert_ball_around_point(self, p, r):
        p = np.array(p)
@@ -115,3 +86,6 @@ class Omega:
             i += 1
         #if euclidean.orient(v1)
         return v1info, v2info
+
+
+

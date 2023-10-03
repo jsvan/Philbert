@@ -1,9 +1,8 @@
 from misc import euclidean, tools
 from hilbert import geometry, polygon
 import numpy as np
-import operator
-from pprint import pprint
-
+from collections import defaultdict
+import random
 EPSILON = 0.0001
 class Line:
 
@@ -23,7 +22,7 @@ class Line:
 
     def nearest_point(self, p, plt=None):
         """
-        This is the binary search version, which i am not going to use because ordering the points is difficult
+        The following is the binary search version, which i am not going to use because ordering the points is difficult
 
         intersectionpoints = [euclidean.intersect((p, v), (self.p, self.q)) for v in self.omega.vertices ]
         def transform(x):
@@ -38,15 +37,20 @@ class Line:
             x is a point
             output is the distance from p to x. If outside the OMEGA, infinity.
             """
+            #try:
             l = Line(x, p, self.omega)
             A, B = l.get_boundary_intersections()
             return geometry.dist(x, p, A, B) if euclidean.point_within_region(x, *self.get_boundary_intersections()) else np.inf
-        distances = [transform(x) for x in intersectionpoints]
-        print("distances", distances)
+            #except:
+            #    return np.inf
+        try:
+            distances = [transform(x) for x in intersectionpoints]
+        except Exception as e:
+            print(e, e.__doc__)
+            return None, None, 10
         if plt is not None:
             tools.scatter(plt, [x for i, x in enumerate(intersectionpoints) if not np.isinf(distances[i])])
 
-        print(distances)
         minidx = np.argmin(distances)
         return intersectionpoints[minidx], distances[minidx], minidx
 
@@ -56,7 +60,7 @@ class Line:
 
     def get_boundaries(self):
         if self.boundaries is None:
-            self.boundaries = self.omega.line_boundaries(self.p, self.q)
+            self.boundaries = self.omega.polygon.line_boundaries(self.p, self.q)
         return self.boundaries
 
     def get_hdist(self):
@@ -105,6 +109,8 @@ class Line:
         :return: list of (tuple tuple tuple), ie (intersection, a, b)
         Currently runs in O(n) time, can be shifted to log(n), but that had some bugs
         """
+        if self.ball_spokes is not None:
+            return self.ball_spokes
 
         def add_if_absent(intersection, a, b):
             key = tuple(sorted([tuple(a), tuple(b)]))
@@ -138,21 +144,8 @@ class Line:
         self.get_boundary_intersections()
         connections = []
         # First divide vertices into two groups
-        points_above_l_before, points_below_l_before, points_above_l_after, points_below_l_after  = [], [], [], []
-        loadingpoints = [points_above_l_before, points_below_l_before]
-
-        for v in self.omega.vertices:
-            if euclidean.point_below_line(v, self.l):
-                loadingpoints[1].append(v)
-                if len(loadingpoints[0]) > 0:
-                    loadingpoints[0] = points_above_l_after
-            else:
-                loadingpoints[0].append(v)
-                if len(loadingpoints[1]) > 0:
-                    loadingpoints[1] = points_below_l_after
-
-        points_above_l = points_above_l_after + points_above_l_before
-        points_below_l = points_below_l_after + points_below_l_before
+        # separate omega
+        points_above_l, points_below_l = self.omega.polygon.halves(self)
         connect_tangents(points_above_l, points_below_l, plt)
         connect_tangents(points_below_l, points_above_l, plt)
         self.ball_spokes = connections
@@ -177,5 +170,75 @@ class Line:
         ballpoints = [x for x in ballpoints if not np.isnan(x).any()]
         gs = polygon.Polygon(ballpoints)
         return gs
+
+
+    def sample_points_outside_ball(self, n, hilbert_ball=None, radius=None):
+        """
+        Returns n sampled points from two classes, for each side of the line, which lie OUTSIDE of the given hilbert
+        ball. If a hilbertball around the line is NOT given, radius must be included and the ball will be made
+        automatically.
+
+        Slow and maybe not uniform...
+        but good enough for research
+        """
+        if hilbert_ball is None:
+            if radius is None:
+                raise Exception("Radius is None and that is bad. Radius may not be None if hilbert_ball is also None.")
+            hilbert_ball = self.hilbert_ball_about_line(radius)
+
+        yooksball, zooksball = hilbert_ball.halves(self.l)
+        yooksomeg, zooksomeg = self.omega.polygon.halves(self.l)
+        # Getting ball spokes is hard, but it will help triangulate the space better
+        spokemap = defaultdict(int)
+        # Using spokes mihgt not be necessary, but I know at least with them
+        # the polygon is divided into 3 and 4 point polygons.
+        # There are (ball vertices >=  omega) # of vertices
+        for s in self.get_ball_spokes():
+            spokemap[tuple(s[1])] += 1
+            spokemap[tuple(s[2])] += 1
+
+        #connect omega's vertices to polygons such they are triangulated:
+        def triangulate(omg, poly):
+            # In between every omega vertex is a square. We're gonna connect vertices to nexts
+            # rather than previouses
+            polyi = 0
+            prevo = None
+            triangles = []
+            for o in omg:
+                if prevo is not None:
+                    triangles.append([o, prevo, poly[polyi]])
+                for _ in range(spokemap[tuple(o)]):
+                    if len(poly) > polyi + 1:
+                        triangles.append([o, poly[polyi], poly[polyi + 1]])
+                    polyi += 1
+                prevo = o
+            return triangles
+
+        def softmaxify(triangles):
+            areas = [euclidean.triangle_area(*t) for t in triangles]
+            tot = sum(areas)
+            return [a / tot for a in areas]
+
+        def sample_triangle(which, triangles):
+            # Always calculating qp, rp is wasteful, but if we're only sampling 20 points who cares. If we
+            # were to do this 4000 times, then change this
+            p, q, r = triangles[which]
+            qp, rp = q - p, r - p
+            a, b = random.random(), random.random()
+            if a + b > 1:
+                a, b = 1 - a, 1 - b
+            return p + a * qp + b * rp
+
+        bluetriangles = triangulate(yooksomeg, yooksball)
+        redtriangles = triangulate(zooksomeg, zooksball)
+        blueareas = softmaxify(bluetriangles)
+        redareas = softmaxify(redtriangles)
+        blues = [sample_triangle(x, bluetriangles) for x in random.choices(list(range(len(blueareas))),
+                                     blueareas, k=n)]
+        reds = [sample_triangle(x, redtriangles) for x in random.choices(list(range(len(redareas))),
+                                                                                 redareas, k=n)]
+        return blues, reds
+
+
 
 

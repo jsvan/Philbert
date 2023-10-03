@@ -97,3 +97,12 @@ class Test_Point_On_Line(TestCase):
         point, dist = euclidean.uniform_sample_from_line_segments(o.vertices)
         print(point, dist)
 
+
+    def test_spin(self):
+        p = np.array([1,1])
+        for i in range(50):
+            q = euclidean.circle_point(i, 50)
+            plt.axline(p, q, color='orange')
+
+        plt.show()
+

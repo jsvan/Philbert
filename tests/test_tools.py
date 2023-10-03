@@ -17,6 +17,18 @@ class MyTestCase(unittest.TestCase):
 
 
 
+    def test_binary_search(self):
+        for end in range(2, 20):
+            for start in range(0, 10):
+                for treasure in range(start, end):
+                    s = tools.BinarySearcher(start, end, discrete=True)
+                    while s.has_next():
+                        n = s.next()
+                        if n == treasure:
+                            break
+                        s.feedback(higher=n<treasure)
+
+
 
 
 

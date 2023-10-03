@@ -1,6 +1,7 @@
 import numpy as np
 from misc import tools
-
+import math
+TWO_PI = 2*math.pi
 COUNTER_CW = 1
 CLOCKWISE = -1
 X, Y = 0, 1
@@ -174,3 +175,21 @@ def uniform_sample_from_line_segments(segs, startfloor=0):
             return get_point_on_line(p, q, ratio), cumulative
 
     raise Exception(f"euclidean Exception, point {cumulative} from length of {tot} not found in segments {segs}.")
+
+def triangle_area(v1, v2, v3):
+    """
+    0.5 * (x1(y2 - y3) + x2(y3 - y1) + x3(y1 - y2))
+    """
+    (x1, y1), (x2, y2), (x3, y3) = v1, v2, v3
+    return 0.5 * (x1 * (y2 - y3) +
+                  x2 * (y3 - y1) +
+                  x3 * (y1 - y2))
+
+def circle_point(i, divisions):
+    """
+    Probably a stupid method, but it will you the ith point around a 'circle' with a radius.
+    I use this later for a line that spins around.
+    """
+
+    slice =  TWO_PI * (i / divisions)
+    return np.array([math.cos(slice), math.sin(slice)])
