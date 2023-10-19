@@ -650,10 +650,10 @@ class PolarWedgeTests(unittest.TestCase):
         print(f"p {p}, q {q}, r {r}")
         pp, pq, pr = Polar.to_line(p), Polar.to_line(q), Polar.to_line(r)
 
-        po = polygon.Polygon(Polar.v2v_convex(o.vertices))
-        ppintersections = [euclidean.intersect(pp, [po.v(i), po.v(ii)]) for i, ii in tools.i_ii(len(po))]
-        pqintersections = [euclidean.intersect(pq, [po.v(i), po.v(ii)]) for i, ii in tools.i_ii(len(po))]
-        printersections = [euclidean.intersect(pr, [po.v(i), po.v(ii)]) for i, ii in tools.i_ii(len(po))]
+        po = polygon.Polygon(o.vertices_coords(), polarize=True)
+        ppintersections = [euclidean.intersect(pp, [po.v(i).v, po.v(ii).v]) for i, ii in tools.i_ii(len(po))]
+        pqintersections = [euclidean.intersect(pq, [po.v(i).v, po.v(ii).v]) for i, ii in tools.i_ii(len(po))]
+        printersections = [euclidean.intersect(pr, [po.v(i).v, po.v(ii).v]) for i, ii in tools.i_ii(len(po))]
         print(f"ppintersections {len(ppintersections)}")
         print(f"pqintersections {len(pqintersections)}")
         print(f"printersections {len(printersections)}")
@@ -661,13 +661,13 @@ class PolarWedgeTests(unittest.TestCase):
         def other_tangent(point, i):
             t = None
             try:
-                t = po.point_tangent_linear(point, True)['v']
+                t = po.point_tangent_linear(point, True).v
             except:
                 pass
             try:
                 # on the same line
-                if t is None or euclidean.eq(t, po.v(i)) or euclidean.eq(t, po.v(i + 1)):
-                    t = po.point_tangent_linear(point, False)['v']
+                if t is None or euclidean.eq(t, po.v(i).v) or euclidean.eq(t, po.v(i + 1).v):
+                    t = po.point_tangent_linear(point, False).v
             except:
                 pass
             if t is None:
@@ -682,7 +682,7 @@ class PolarWedgeTests(unittest.TestCase):
 
         ppwedge = [(np.array([pptangents[i], po.v(i)]), np.array([pptangents[i], po.v(ii)])) for i, ii in tools.i_ii(len(po.vertices))]
         pqwedge = [(np.array([pqtangents[i], po.v(i)]), np.array([pqtangents[i], po.v(ii)])) for i, ii in tools.i_ii(len(po.vertices))]
-        prwedge = [(np.array([prtangents[i], po.v(i)]), np.array([prtangents[i], po.v(ii)])) for i, ii in tools.i_ii(len(po.vertices))]
+        prwedge = [(np.array([prtangents[i], po.v(i).v]), np.array([prtangents[i], po.v(ii)])) for i, ii in tools.i_ii(len(po.vertices))]
         print(f"ppwedge {len(ppwedge)}, {ppwedge}")
         print(f"pqwedge {len(pqwedge)}, {pqwedge}")
         print(f"prwedge {len(prwedge)}, {prwedge}")
@@ -693,7 +693,7 @@ class PolarWedgeTests(unittest.TestCase):
         plt.axline(*pr, color='red')
         for i, ii in tools.i_ii(len(po.vertices)):
             #plt.axline(po.v(i), po.v(ii), color='gray', linewidth=0.4)
-            tools.plot_line(plt, po.v(i), po.v(ii), color='gray', linewidth=2)
+            tools.plot_line(plt, po.v(i).v, po.v(ii).v, color='gray', linewidth=2)
             plt.scatter(*ppintersections[i], color='blue')
             plt.scatter(*pqintersections[i], marker='^', color='green')
             plt.scatter(*printersections[i], marker='*', color='red')
@@ -829,10 +829,24 @@ class PolarWedgeTests(unittest.TestCase):
 
 
 
+class Test_Dist(unittest.TestCase):
 
+    def test_dist_is_polar_dist(self):
+        o = omega.Omega(vertices=[(1.4, -0.1),
+                                  (1.1, 0.8),
+                                  (0.6, 1.1),
+                                  (-0.2, 1.2),
+                                  (-.5, 0.8),
+                                  (-.8, 0.3),
+                                  (-.7, -.2)])
 
-
-
+        for _ in range(1000):
+            p, q = tools.rand_points(2)
+            l = line.Line(p, q, o)
+            A, B = l.get_boundary_intersections()
+            polar_dist = Polar.dist(Polar.to_line(p), Polar.to_line(q), Polar.to_line(A), Polar.to_line(B))
+            print(f"Standard dist: {l.get_hdist()}, Polar dist: {polar_dist}. Difference: {l.get_hdist() - polar_dist}")
+            self.assertAlmostEqual(l.get_hdist(), polar_dist)
 
 
 

@@ -34,14 +34,14 @@ class TangentsAsRadiusGrows(unittest.TestCase):
             tools.annotate(plt, 'pq', [p, q])
             colors = ["red", "orange", "blue", "green"]
             for i, t in enumerate(tangents):
-                if t[0]['v'] is not None and t[1]['v'] is not None:
+                if t[0].v is not None and t[1].v is not None:
                     print(i, t)
-                    plt.axline(t[0]['v'], t[1]['v'], color=colors[i])
+                    plt.axline(t[0].v, t[1].v, color=colors[i])
 
-            annots = tools.annotate(plt, [t[0]['i'] for t in tangents], [t[0]['v'] for t in tangents])
-            tools.annotate(plt, [t[1]['i'] for t in tangents], [t[1]['v'] for t in tangents], annots)
+            annots = tools.annotate(plt, [t[0].i for t in tangents], [t[0].v for t in tangents])
+            tools.annotate(plt, [t[1].i for t in tangents], [t[1].v for t in tangents], annots)
 
-            #plt.title(' -- '.join([str(x) for x in [tangentA[0]['i'], tangentA[1]['i'], tangentB[0]['i'], tangentB[1]['i']]]))
+            #plt.title(' -- '.join([str(x) for x in [tangentA[0].i, tangentA[1].i, tangentB[0].i, tangentB[1].i]]))
             plt.show()
 
     def test_tangents_v_radius_weird(self, p, q):
@@ -65,14 +65,14 @@ class TangentsAsRadiusGrows(unittest.TestCase):
             tools.annotate(plt, 'pq', [p, q])
             colors = ["red", "orange", "blue", "green"]
             for i, t in enumerate(tangents):
-                if t[0]['v'] is not None and t[1]['v'] is not None:
+                if t[0].v is not None and t[1].v is not None:
                     print(i, t)
-                    plt.axline(t[0]['v'], t[1]['v'], color=colors[i])
+                    plt.axline(t[0].v, t[1].v, color=colors[i])
 
-            annots = tools.annotate(plt, [t[0]['i'] for t in tangents], [t[0]['v'] for t in tangents])
-            tools.annotate(plt, [t[1]['i'] for t in tangents], [t[1]['v'] for t in tangents], annots)
+            annots = tools.annotate(plt, [t[0].i for t in tangents], [t[0].v for t in tangents])
+            tools.annotate(plt, [t[1].i for t in tangents], [t[1].v for t in tangents], annots)
 
-            #plt.title(' -- '.join([str(x) for x in [tangentA[0]['i'], tangentA[1]['i'], tangentB[0]['i'], tangentB[1]['i']]]))
+            #plt.title(' -- '.join([str(x) for x in [tangentA[0].i, tangentA[1].i, tangentB[0].i, tangentB[1].i]]))
             plt.show()
 
 
@@ -107,14 +107,14 @@ class TangentsAndBalls(unittest.TestCase):
             tools.annotate(plt, 'pq', [p, q])
             colors = ["red", "orange", "blue", "green"]
             for i, t in enumerate(tangents):
-                if t[0]['v'] is not None and t[1]['v'] is not None:
+                if t[0].v is not None and t[1].v is not None:
                     print(i, t)
-                    plt.axline(t[0]['v'], t[1]['v'], color=colors[i])
+                    plt.axline(t[0].v, t[1].v, color=colors[i])
 
-            annots = tools.annotate(plt, [t[0]['i'] for t in tangents], [t[0]['v'] for t in tangents])
-            tools.annotate(plt, [t[1]['i'] for t in tangents], [t[1]['v'] for t in tangents], annots)
+            annots = tools.annotate(plt, [t[0].i for t in tangents], [t[0].v for t in tangents])
+            tools.annotate(plt, [t[1].i for t in tangents], [t[1].v for t in tangents], annots)
 
-            #plt.title(' -- '.join([str(x) for x in [tangentA[0]['i'], tangentA[1]['i'], tangentB[0]['i'], tangentB[1]['i']]]))
+            #plt.title(' -- '.join([str(x) for x in [tangentA[0].i, tangentA[1].i, tangentB[0].i, tangentB[1].i]]))
             plt.show()
 
     def test_weird(self, p, q):
@@ -139,14 +139,14 @@ class TangentsAndBalls(unittest.TestCase):
             tools.annotate(plt, 'pq', [p, q])
             colors = ["red", "orange", "blue", "green"]
             for i, t in enumerate(tangents):
-                if t[0]['v'] is not None and t[1]['v'] is not None:
+                if t[0].v is not None and t[1].v is not None:
                     print(i, t)
-                    plt.axline(t[0]['v'], t[1]['v'], color=colors[i])
+                    plt.axline(t[0].v, t[1].v, color=colors[i])
 
-            annots = tools.annotate(plt, [t[0]['i'] for t in tangents], [t[0]['v'] for t in tangents])
-            tools.annotate(plt, [t[1]['i'] for t in tangents], [t[1]['v'] for t in tangents], annots)
+            annots = tools.annotate(plt, [t[0].i for t in tangents], [t[0].v for t in tangents])
+            tools.annotate(plt, [t[1].i for t in tangents], [t[1].v for t in tangents], annots)
 
-            #plt.title(' -- '.join([str(x) for x in [tangentA[0]['i'], tangentA[1]['i'], tangentB[0]['i'], tangentB[1]['i']]]))
+            #plt.title(' -- '.join([str(x) for x in [tangentA[0].i, tangentA[1].i, tangentB[0].i, tangentB[1].i]]))
             plt.show()
 
 

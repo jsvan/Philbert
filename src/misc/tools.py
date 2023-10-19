@@ -1,6 +1,8 @@
 from operator import truediv, floordiv
 import numpy as np
 from misc import euclidean
+from matplotlib.colors import TABLEAU_COLORS as COLORS
+COLORS = list(COLORS.values())
 X, Y = 0, 1
 
 def namer(i):
@@ -96,7 +98,8 @@ def bs_on_points(vertices, transform, comparator):
 
 
 def i_ii(n, connect_ends=True):
-    # generator
+    # generator for indeces i and i+1, wrapping around a polygon for example.
+    # Connect-ends gives you that final wrap around, otherwise, connects piecewise the indeces.
     mn = n if connect_ends else n-1
     return ((i, (i + 1) % n) for i in range(mn))
 
@@ -116,9 +119,10 @@ def plot_congruent(plt, vertices, color=None, connect_ends=True, axline=False, z
     for i, ii in i_ii(len(vertices), connect_ends):
         c = color[i] if color is not None and type(color) == list else color
         if axline:
-            plt.axline(vertices[i], vertices[ii], color=c, zorder=zorder, linewidth=linewidth)
+            plt.axline(vertices[i].v, vertices[ii].v, color=c, zorder=zorder, linewidth=linewidth)
         else:
             plot_line(plt, vertices[i], vertices[ii], color=c, zorder=zorder, linewidth=linewidth)
+
 
 def plot_line(plt, a, b, color=None, zorder=None, linewidth=1.5, axline=False, linestyle=None):
     """
@@ -129,16 +133,17 @@ def plot_line(plt, a, b, color=None, zorder=None, linewidth=1.5, axline=False, l
     :param b:
     :return:
     """
-    try:
-        if plt is not None and a is not None and b is not None:
-            if euclidean.eq(a, b):
-                print(a, b, color, zorder, linewidth, axline)
-            if axline:
-                plt.axline(a, b, color=color, zorder=zorder, linewidth=linewidth, linestyle=linestyle)
-            else:
-                plt.plot([a[X], b[X]], [a[Y], b[Y]], color=color, zorder=zorder, linewidth=linewidth, linestyle=linestyle)
-    except:
-        print(a, b, 'failed')
+    #try:
+    if plt is not None and a is not None and b is not None:
+        if euclidean.eq(a, b):
+            print(a, b, color, zorder, linewidth, axline)
+        if axline:
+            plt.axline(a.v, b.v, color=color, zorder=zorder, linewidth=linewidth, linestyle=linestyle)
+        else:
+            plt.plot([a[X], b[X]], [a[Y], b[Y]], color=color, zorder=zorder, linewidth=linewidth, linestyle=linestyle)
+    #except Exception as e:
+    #    print(e, e.__doc__)
+    #    print(a, b, type(a), type(b), 'failed')
 
 def scatter(plt, points, colors=None, zorder=100):
     c = None
@@ -156,14 +161,14 @@ def annotate(plt, names, points, seen={}):
     for i in range(len(names)):
         old = ""
         if points[i] is not None:
-            key = tuple(points[i])
+            key = tuple(points[i].v)
             new = str(names[i])
             if key in seen:
                 old = seen[key].get_text()
                 seen[key].remove()
                 if old == new:
                     old = ""
-            seen[key] = plt.annotate(old + new, points[i])
+            seen[key] = plt.annotate(old + new, points[i].v)
 
     return seen
 
@@ -171,5 +176,5 @@ def annotate(plt, names, points, seen={}):
 
 def rand_points(how_many, offset=[0,0]):
     offset=np.array(offset)
-    return [x[:2] + offset for x in np.random.dirichlet([1,1,1], how_many)]
+    return [euclidean.Point(x[:2] + offset) for x in np.random.dirichlet([1,1,1], how_many)]
 

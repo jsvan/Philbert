@@ -13,7 +13,7 @@ class MyTestCase(unittest.TestCase):
             a, b = random.random(), random.random()
             if a + b > 1:
                 a, b = 1-a, 1-b
-            points.append(p + a * qp + b * rp)
+            points.append(p + qp * a + rp * b)
 
         tools.plot_congruent(plt, [p, q, r], color='gray')
         tools.scatter(plt, points)

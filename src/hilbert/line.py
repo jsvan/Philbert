@@ -1,15 +1,18 @@
 from misc import euclidean, tools
 from hilbert import geometry, polygon
+from misc.euclidean import Point, BasicLine, Vertex
 import numpy as np
 from collections import defaultdict
 import random
+
 EPSILON = 0.0001
+
 class Line:
 
     def __init__(self, p, q, omega):
         self.omega = omega
-        self.p, self.q = np.array(p), np.array(q)
-        self.l = self.p, self.q
+        self.p, self.q = Point(p), Point(q)
+        self.l = euclidean.BasicLine(p, q)
         self.midpoint = None
         self.boundaries = None
         self.ball_spokes = None
@@ -113,16 +116,16 @@ class Line:
             return self.ball_spokes
 
         def add_if_absent(intersection, a, b):
-            key = tuple(sorted([tuple(a), tuple(b)]))
+            key = tuple(sorted([tuple(a.v), tuple(b.v)]))
             if key not in seen:
                 seen.add(key)
                 connections.append([intersection, a, b])
 
         def connect_tangents(segments, tangent_points, plt=None):
-
+            #tangent_vs = np.array([x.v for x in tangent_points])
             for i in range(len(segments) - 1):
                 ii = i + 1
-                segment = (segments[i], segments[ii])
+                segment = BasicLine(segments[i], segments[ii])
                 intersectpoint = euclidean.intersect(self.l, segment)
                 #bestvertex, dot, index = tools.bs_on_points(
                 #    tangent_points, lambda v: euclidean.tangent_dot(v, intersectpoint, self.q), operator.gt)
@@ -132,13 +135,13 @@ class Line:
                 bestvertex = tangent_points[bestidx]
 
                 if plt is not None:
-                    tools.plot_line(plt, intersectpoint, segment[0], color='yellow')
-                intersection_0 = euclidean.intersect((bestvertex, segment[0]), self.l)
-                intersection_1 = euclidean.intersect((bestvertex, segment[1]), self.l)
+                    tools.plot_line(plt, intersectpoint, segment.a, color='yellow')
+                intersection_0 = euclidean.intersect(BasicLine(bestvertex, segment.a), self.l)
+                intersection_1 = euclidean.intersect(BasicLine(bestvertex, segment.b), self.l)
                 # Putting into set because might be repeats, dunno
                 # All np.arrays must be tuples to be hashed.
-                add_if_absent(intersection_0, bestvertex, segment[0])
-                add_if_absent(intersection_1, bestvertex, segment[1])
+                add_if_absent(intersection_0, bestvertex, segment.a)
+                add_if_absent(intersection_1, bestvertex, segment.b)
 
         seen = set()
         self.get_boundary_intersections()
@@ -157,7 +160,7 @@ class Line:
         for intersection, A, B in self.get_ball_spokes():
             p1 = geometry.hdist_to_euc(intersection, A, B, radius)
             ballpoints.append(p1)
-            p2 = geometry.hdist_to_euc(np.array(intersection), np.array(A), np.array(B), -radius)
+            p2 = geometry.hdist_to_euc(intersection, A, B, -radius)
             ballpoints.append(p2)
             if plt:
                 tools.plot_line(plt, A, B, color='red')
@@ -186,16 +189,16 @@ class Line:
                 raise Exception("Radius is None and that is bad. Radius may not be None if hilbert_ball is also None.")
             hilbert_ball = self.hilbert_ball_about_line(radius)
 
-        yooksball, zooksball = hilbert_ball.halves(self.l)
-        yooksomeg, zooksomeg = self.omega.polygon.halves(self.l)
+        yooksball, zooksball = hilbert_ball.halves(self)
+        yooksomeg, zooksomeg = self.omega.polygon.halves(self)
         # Getting ball spokes is hard, but it will help triangulate the space better
         spokemap = defaultdict(int)
         # Using spokes mihgt not be necessary, but I know at least with them
         # the polygon is divided into 3 and 4 point polygons.
         # There are (ball vertices >=  omega) # of vertices
         for s in self.get_ball_spokes():
-            spokemap[tuple(s[1])] += 1
-            spokemap[tuple(s[2])] += 1
+            spokemap[tuple(s[1].v)] += 1
+            spokemap[tuple(s[2].v)] += 1
 
         #connect omega's vertices to polygons such they are triangulated:
         def triangulate(omg, poly):
@@ -207,7 +210,7 @@ class Line:
             for o in omg:
                 if prevo is not None:
                     triangles.append([o, prevo, poly[polyi]])
-                for _ in range(spokemap[tuple(o)]):
+                for _ in range(spokemap[tuple(o.v)]):
                     if len(poly) > polyi + 1:
                         triangles.append([o, poly[polyi], poly[polyi + 1]])
                     polyi += 1

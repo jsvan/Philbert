@@ -1,11 +1,86 @@
 import numpy as np
-from misc import tools
 import math
+from dataclasses import dataclass, astuple
 TWO_PI = 2*math.pi
 COUNTER_CW = 1
 CLOCKWISE = -1
 X, Y = 0, 1
 EPS = 0.00001
+
+
+
+
+class Point:
+    def __init__(self, p):
+        if type(p) is np.array:
+            self.v = p
+        elif type(p) is Point or type(p) is Vertex:
+            self.v = p.v
+        else:
+            self.v = np.array(p)
+        if self.v.shape != (2,):
+            raise Exception(f"Shape error. Need shape (2,), but you gave {self.v.shape}, with input {p}.")
+
+    def __iter__(self):
+        return iter(self.v)
+    def __getitem__(self, item):
+        return self.v[item]
+    def __len__(self):
+        return len(self.v)
+    def __repr__(self):
+        return f"Point {self.v}"
+    def __add__(self, other):
+        if type(other) is Point:
+            other = other.v
+        return Point(self.v + other)
+    def __sub__(self, other):
+        if type(other) is Point:
+            other = other.v
+        return Point(self.v - other)
+    def __mul__(self, other):
+        if type(other) is Point:
+            other = other.v
+        return Point(self.v * other)
+    def __truediv__(self, other):
+        if type(other) is Point:
+            other = other.v
+        return Point(self.v / other)
+    def __lt__(self, other):
+        return self.v < other.v
+    def __gt__(self, other):
+        return self.v > other.v
+    def __le__(self, other):
+        return self.v <= other.v
+    def __ge__(self, other):
+        return self.v >= other.v
+    def __eq__(self, other):
+        return eq(self, other)
+
+
+@dataclass
+class BasicLine:
+    a: Point
+    b: Point
+    def __iter__(self):
+        return iter((self.a, self.b))
+    def __getitem__(self, item):
+        return self.b if item else self.a
+
+@dataclass
+class Vertex(Point):
+    i: int
+    v: np.array
+    def __init__(self, v, i):
+        super().__init__(v)
+        self.i = i
+@dataclass
+class Edge:
+    point_a: Vertex
+    point_b: Vertex
+    def __iter__(self):
+        return iter((self.point_a, self.point_b))
+    def __getitem__(self, item):
+        return self.point_b if item else self.point_a
 
 def dname(w):
     if w == COUNTER_CW:
@@ -13,6 +88,7 @@ def dname(w):
     if w == CLOCKWISE:
         return "CLOCKWISE"
     return "None"
+
 
 def det(a, b, c, d):
     return (a*d) - (b*c)
@@ -39,7 +115,7 @@ def tangent_dot(v, p, q):
 
     :return: float
     """
-    return np.dot(q-p, v-p)
+    return np.dot((q-p).v, (v-p).v)
 
 
 def cos(v, p, q):
@@ -93,7 +169,6 @@ def intersect(line_a, line_b):
 
     (x1, y1), (x2, y2) = line_a
     (x3, y3), (x4, y4) = line_b
-
     xy12 = det(x1, y1, x2, y2)
     xy34 = det(x3, y3, x4, y4)
     x1m2 = x1 - x2
@@ -101,20 +176,19 @@ def intersect(line_a, line_b):
     y1m2 = y1 - y2
     y3m4 = y3 - y4
     denominator = det(x1m2, y1m2, x3m4, y3m4)
-
     x = det(xy12, x1m2, xy34, x3m4) / denominator
     y = det(xy12, y1m2, xy34, y3m4) / denominator
-    return np.array([x, y])
+    return Point([x, y])
 
 
 def line_segment_normal(p, q):
-    dx,dy = p - q
-    return np.array([-dy, dx]), np.array([dy,-dx])
+    dx, dy = p - q
+    return Point([-dy, dx]), Point([dy, -dx])
 
 
 def norm_towards_q(p1, p2, q):
     ns = line_segment_normal(p1, p2)
-    return ns[np.dot(q - p1, ns[0]) < 0]
+    return ns[np.dot(q.v - p1.v, ns[0].v) < 0]
 
 
 def point_on_line(p, l, segment=False):
@@ -131,6 +205,7 @@ def point_below_line(p, l):
     a, b = l
     return (b[X] - a[X])*(p[Y] - a[Y]) < (b[Y] - a[Y])*(p[X] - a[X])
 
+
 def point_within_region(p, A, B):
     """
     This is my stupid optimization, checks that a point is on a line INSIDE of omega, by making sure no
@@ -141,10 +216,12 @@ def point_within_region(p, A, B):
             return False
     return True
 
+
 def eq(p1, p2):
-    if p1 is None or p2 is None:
+    if p1 is None or p2 is None or p1.v is None or p2.v is None:
         return False
-    return np.isclose(p1, p2).all()
+
+    return np.isclose(p1.v, p2.v).all()
 
 
 def get_point_on_line(p, q, dist):
@@ -154,12 +231,12 @@ def get_point_on_line(p, q, dist):
     dist==1 is point q
     """
     slope = q - p
-    return p + dist*slope
-
+    return p + dist * slope
 
 
 def uniform_sample_from_line_segments(segs, startfloor=0):
-    distances = [np.linalg.norm(segs[ii] - segs[i]) for i, ii in tools.i_ii(len(segs), connect_ends=False)]
+    from misc.tools import i_ii
+    distances = [np.linalg.norm(segs[ii].v - segs[i].v) for i, ii in i_ii(len(segs), connect_ends=False)]
     tot = sum(distances)
     if startfloor >= tot:
         raise Exception(f"Starting at a point {startfloor} greater than the allowed length of {tot}")
@@ -187,9 +264,9 @@ def triangle_area(v1, v2, v3):
 
 def circle_point(i, divisions):
     """
-    Probably a stupid method, but it will you the ith point around a 'circle' with a radius.
-    I use this later for a line that spins around.
+    Probably a stupid method, but it will give you the ith point around a 'circle'.
+    I use this for a line that spins around.
     """
 
-    slice =  TWO_PI * (i / divisions)
-    return np.array([math.cos(slice), math.sin(slice)])
+    sliced = TWO_PI * (i / divisions)
+    return np.array([math.cos(sliced), math.sin(sliced)])

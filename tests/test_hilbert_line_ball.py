@@ -1,8 +1,8 @@
 from unittest import TestCase
 
 import hilbert.omega
-from src.hilbert import omega, line, geometry
-from src.misc import tools, euclidean
+from hilbert import omega, line, geometry
+from misc import tools, euclidean
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -269,8 +269,9 @@ class Sample_Points_On_Ball(TestCase):
         p, q = tools.rand_points(2)
         l = line.Line(p, q, o)
         ball = l.hilbert_ball_about_line(1)
-        above = [x for x in ball.vertices if euclidean.point_below_line(x, l.l)]
-        below = list(reversed([x for x in ball.vertices if not euclidean.point_below_line(x, l.l)]))
+
+        above, below = ball.halves(l.l)#  = [x for x in ball.vertices if euclidean.point_below_line(x, l.l)]
+        #below = list(reversed([x for x in ball.vertices if not euclidean.point_below_line(x, l.l)]))
         b1, dist = euclidean.uniform_sample_from_line_segments(above)
         r, dist = euclidean.uniform_sample_from_line_segments(below, dist)
         b2, dist = euclidean.uniform_sample_from_line_segments(above,dist)

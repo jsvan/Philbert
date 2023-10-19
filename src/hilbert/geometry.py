@@ -3,6 +3,7 @@ from math import e as the_E
 import numpy as np
 from numpy.linalg import norm
 from misc import euclidean
+from misc.euclidean import Point
 
 """Mapping isometry onto euclidean?"""
 
@@ -16,13 +17,13 @@ def hdist_to_euc(p, A, B, hdist):
    q = (a + tc, b + td)
    """
    # a, b = p    # not actually needed
-   slope = p - B if np.isclose(p, A).all() else p - A  # slope or diff or whatever
+   slope = p - B if np.isclose(p.v, A.v).all() else p - A  # slope or diff or whatever
    flip = slope[0] == 0
    # This is how i deal with vertical divide by 0 issues. Pretend it's horizontal!
    if flip:  # vertical
-      p = np.flip(p)
-      A = np.flip(A)
-      B = np.flip(B)
+      p.v = np.flip(p.v)
+      A.v = np.flip(A.v)
+      B.v = np.flip(B.v)
       slope = np.flip(slope)
 
    c, d = slope
@@ -36,7 +37,7 @@ def hdist_to_euc(p, A, B, hdist):
    t = (-k - sqrt((K * pow(k - s, 2))) + K * s) / (-1 + K)
    point = p + (t * slope)
    if flip:
-      point = np.flip(point)
+      point.v = np.flip(point.v)
    return point
 
 
@@ -47,6 +48,7 @@ def nielson_dist(p, q):
    :param q: np.array(coordinates)
    :return: float
    """
+   p, q = p.v, q.v
    if np.allclose(p, q): return 0  # np.allclose returns true if all dim are within EPSILON
    idx = np.logical_not(np.isclose(p, q))  # np.isclose returns an array of bool, for each dimension if within EPSILON
    if (idx.sum() == 1): return 0  # returns 0 if only ONE dimension is not close (??)
@@ -66,10 +68,11 @@ def dist(p, q, A, B):
    |pA|
    :param p: np.array(coordinates)
    :param q: np.array(coordinates)
-   :param A: np.array(coordinates) boundary intersection coord close to p
+   :param A: np.array(coordinates) boundary intersection coord close to p\
    :param B: np.array(coordinates) boundary intersection coord close to q
    :return: float, hilbert distance between p, q
    """
+   p, q, A, B = p.v, q.v, A.v, B.v
    pA = norm(p - A)
    pB = norm(p - B)
    qA = norm(q - A)
@@ -99,6 +102,7 @@ def ordered_double_intersect(p, q, boundaries):
    :param boundaries: list of two boundaries. Each boundary is a list of two points.
    :return: points A and B, of order A--p--q--B
    """
+
    A, B = euclidean.intersect([p, q], boundaries[0]), \
       euclidean.intersect([p, q], boundaries[1])
    # This is if A and B are swapped, which is handy because my discovery algorithm doesn't handle orientation for me
