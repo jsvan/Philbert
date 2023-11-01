@@ -21,7 +21,7 @@ class PolarTests(unittest.TestCase):
         p = tools.rand_points(1)[0]
         s = Sectors(Polar.to_line(p), o)
 
-        Polar.plot_congruent(plt, o.polygon)
+        Polar.plot_congruent(plt, o.)
         tools.scatter(plt, s.intersections)
         for i, w in enumerate(s.wedges):
             tools.plot_line(plt, w[0][0]+0.01*i, w[0][1]+0.01*i, color=tools.COLORS[i], axline=True)
@@ -35,19 +35,19 @@ class PolarTests(unittest.TestCase):
         s = Sectors(Polar.to_line(p), polarO)
         o = omega.Omega(vertices)
         tools.plot_congruent(plt, o.vertices)
-        #plt.axline(*o.polygon.edge(0))
+        #plt.axline(*o..edge(0))
         tools.scatter(plt, [p, Polar.to_point(s.wedges[0][0])], colors=[tools.COLORS[0]])
-        tangents = o.polygon.point_tangents(Polar.to_point(s.wedges[0][0]))
+        tangents = o..point_tangents(Polar.to_point(s.wedges[0][0]))
         #print(Polar.to_point(s.wedges[0][0]), tangents)
         #plt.axline(Polar.to_point(s.wedges[0][0]), tangents[0].v)
         #plt.axline(Polar.to_point(s.wedges[0][0]), tangents[1].v)
 
         for xxx in s.wedgetangentidxs:
-            print(xxx, o.polygon.edge(s.wedgetangentidxs[xxx]))
+            print(xxx, o..edge(s.wedgetangentidxs[xxx]))
         # The vertices of polar omega correspond to the vertices i and i+1
         Aidx = 0
         Bidx = s.wedgetangentidxs[0]
-        As, Bs = o.polygon.edge(Aidx), o.polygon.edge(Bidx)
+        As, Bs = o..edge(Aidx), o..edge(Bidx)
         line0 = [geometry.hdist_to_euc(p, As[0], Bs[0], 1), geometry.hdist_to_euc(p, As[1], Bs[1], 1)]
         line1 = [geometry.hdist_to_euc(p, As[0], Bs[0], -1), geometry.hdist_to_euc(p, As[1], Bs[1], -1)]
         tools.scatter(plt, line0, colors=['magenta'])
@@ -55,7 +55,7 @@ class PolarTests(unittest.TestCase):
         plt.axline(*line0, color='gray')
         plt.axline(*line1, color='gray')
 
-        plt.axline(*o.polygon.edge(s.wedgetangentidxs[0]))
+        plt.axline(*o..edge(s.wedgetangentidxs[0]))
         plt.show()
 
     def test_wedges_with_first_distance_point(self):
@@ -67,7 +67,7 @@ class PolarTests(unittest.TestCase):
         #A, B = l.get_boundary_intersections()
         Aidx = 0
         Bidx = s.wedgetangentidxs[0]
-        As, Bs = o.polygon.edge(Aidx), o.polygon.edge(Bidx)
+        As, Bs = o..edge(Aidx), o.edge(Bidx)
         #line0 = [geometry.hdist_to_euc(p, As[0], Bs[0], 1), geometry.hdist_to_euc(p, As[1], Bs[1], 1)]
         #line1 = [geometry.hdist_to_euc(p, As[0], Bs[0], -1), geometry.hdist_to_euc(p, As[1], Bs[1], -1)]
         pinter = euclidean.intersect((wpt0, wpt1), s.p)
@@ -75,7 +75,7 @@ class PolarTests(unittest.TestCase):
         #vanishingpt = euclidean.intersect(*l.get_boundaries())
         #polarwedgept = Polar.to_point(stdwedgept, p)
 
-        Polar.plot_congruent(plt, polarO.polygon)
+        Polar.plot_congruent(plt, polarO.vertices)
         #tools.scatter(plt, [Polar.to_point(line0), Polar.to_point(line1)], colors=['black', 'black'])
         #print("POLAR POINTS: ", Polar.to_point(line0), Polar.to_point(line1))
         for i, w in enumerate(s.wedges):

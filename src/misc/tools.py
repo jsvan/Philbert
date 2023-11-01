@@ -145,7 +145,7 @@ def plot_line(plt, a, b, color=None, zorder=None, linewidth=1.5, axline=False, l
     #    print(e, e.__doc__)
     #    print(a, b, type(a), type(b), 'failed')
 
-def scatter(plt, points, colors=None, zorder=100):
+def scatter(plt, points, colors=None, zorder=100, size=None, ):
     c = None
     for i, p in enumerate(points):
         if p is not None:
@@ -153,9 +153,13 @@ def scatter(plt, points, colors=None, zorder=100):
                 if len(colors) == 1:
                     i = 0
                 c = colors[i]
-            plt.scatter(*p, color=c, zorder=zorder)
+            plt.scatter(*p, color=c, zorder=zorder, s=size)
 
 
+
+"""
+annotations happen slightly up and to the right of the point. 
+"""
 def annotate(plt, names, points, seen={}):
     assert len(names) == len(points)
     for i in range(len(names)):
@@ -173,8 +177,41 @@ def annotate(plt, names, points, seen={}):
     return seen
 
 
+"""
+returns evenly spaced numbers of a specific width over an interval.
+Unline numpy's, it snaps to the grid which includes the origin (0, 0).
+linspace(5.5, 6.5, 0.2) would return np.array([5.6, 5.8, 6.0, 6.2, 6.4])
+Does not include upper boundary.
+"""
+def linspace(start, stop, step):
+
+    if start > stop:
+        start, stop = stop, start
+
+    startgap = (step - (start % step)) % 1  # Snap to grid
+    return np.arange(start + startgap, stop, step)
+
 
 def rand_points(how_many, offset=[0,0]):
     offset=np.array(offset)
     return [euclidean.Point(x[:2] + offset) for x in np.random.dirichlet([1,1,1], how_many)]
+
+def lte(a, b):
+    return a <= b or np.isclose(a, b)
+
+def gte(a, b):
+    return a >= b or np.isclose(a, b)
+
+def save_movie_frame(plt, i):
+    plt.savefig(f"./movieframes/{namer(i)}.png")
+    plt.close()
+
+
+def finish_movie(outname):
+    cmd = f"ffmpeg -framerate 20 -pattern_type glob -i \"./movieframes/*.png\"   -c:v libx264 -pix_fmt yuv420p ./movies/{outname}.mp4"
+    import os
+    os.system('ls ./')
+    os.system(cmd)
+    os.system(f"xdg-open ./movies/{outname}.mp4")
+    os.system(f"rm ./moviesframes/*.png")
 

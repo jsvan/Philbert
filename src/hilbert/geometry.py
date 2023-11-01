@@ -59,7 +59,7 @@ def nielson_dist(p, q):
    return np.abs(np.log(1 - 1 / t0) - np.log(1 - 1 / t1)) # mathematically equivalent to dist algorithm tested and approved
 
 
-def dist(p, q, A, B):
+def dist(p, q, A, B, absoluteval=True):
    """
    A--p--q--B
       |-pB--|
@@ -78,7 +78,8 @@ def dist(p, q, A, B):
    qA = norm(q - A)
    qB = norm(q - B)
    crossratio = (pB / qB) * (qA / pA)
-   return abs(log(crossratio))
+   d = log(crossratio)
+   return abs(d) if absoluteval else d
 
 
 def vectorform_dist(p_, q_, u_, v_):
@@ -116,4 +117,35 @@ def ordered_double_intersect(p, q, boundaries):
    return A, B
 
 
+"""
+Finds the pointwise derivative of q on the line AB.
+ -- A, B constant
+ -- derivative as q moves along line.
+ -- returns float
+ BUG: Possibly... Should AB be normalozed to have a distance of one?
+ It looks like no. Why not? 
+ 
+ Minimum derivative is equal to 4 / norm(A - B)
+ That means only for the simplex, derivative is almost always much larger than zero.
+ 
+ Also, a simplified way of thinking about the space. The middle half of the cord will have a speed fairly well 
+ approximated by the minimum derivative, which is 4 / norm(A-B). But about half the area can be thought of as 
+ relatively 'linear', but still fairly speedy. 
+ 
+ Calculating the derivative by hand uses the substitution |Aq| = t and |Bq| = (1 - t), taking derivative with respect
+ to t. 
+ """
+def derivative(q, A, B):
+   Aq = np.linalg.norm(A - q)
+   Bq = np.linalg.norm(B - q)
+   return 1 / Aq + 1 / Bq
+
+
+"""
+Double derivative
+"""
+def acceleration(q, A, B):
+   Aq = np.linalg.norm(A - q)
+   Bq = np.linalg.norm(B - q)
+   return (1 / (Bq * Bq)) - (1 / (Aq * Aq))
 

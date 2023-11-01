@@ -7,13 +7,11 @@ from misc.euclidean import Point
 import itertools
 
 
-class Omega:
+class Omega(polygon.Polygon):
 
-    def __init__(self, vertices=([0, 0], [0, 1], [1, 0]), offset=[0, 0], polarize=False):
-        self.polygon = polygon.Polygon(vertices, offset, polarize)
-        self.vertices = self.polygon.vertices
-        # This is a hack for binary search, wraps around the final points. Whatever.
-        self.vertices_expanded = self.polygon.vertices_expanded
+    def __init__(self, vertices=([0, 0], [0, 1], [1, 0]), offset=[0, 0]):
+        super().__init__(vertices, offset)
+
 
     def vertices_coords(self):
         return [x.v for x in self.vertices]
@@ -44,7 +42,6 @@ class Omega:
             #    print("Omega.py all_tangent_lines ", e, e.__doc__)
 
         return tangents
-
 
 
     def tangent_line(self, poly1, poly2, maxwards1, maxwards2, plt=None):

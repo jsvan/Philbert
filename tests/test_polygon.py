@@ -1,14 +1,11 @@
 import unittest
 
-import hilbert.omega
-from hilbert.polygon import Polygon
 from hilbert.omega import Omega
-from hilbert import geometry, line
 from misc.euclidean import Point
 from matplotlib import pyplot as plt
-from numpy.random import dirichlet
-import numpy as np
 from misc import tools
+from misc.dual import Polar, Sectors
+import test_base
 
 class MyTestCase(unittest.TestCase):
 
@@ -99,6 +96,25 @@ class MyTestCase(unittest.TestCase):
             tools.annotate(plt, range(len(ball.vertices)), ball.vertices)
             plt.show()
 
+    def test_half_polygon_sorting(self):
+        onaught = test_base.omega_for_dual
+        naughts = [Polar.to_line(x) for x in tools.rand_points(1)]
+        sectors = [Sectors(x, onaught) for x in naughts]
+        # intersections = []
+        for radius in [0.3, 0.5, 0.8, 1.2, 1.8, 2.5]:
+            pseudohyperbolas = [x.pseudohyperbola(radius) for x in sectors]
+            for i, hy in enumerate(pseudohyperbolas):
+                hy.plot_congruent(plt, color=tools.COLORS[i])
+                tools.plot_line(plt, *naughts[i], color=tools.COLORS[i], axline=True)
+                tools.annotate(plt, range(len(hy.lowerhalf)),hy.lowerhalf)
+                tools.annotate(plt, range(len(hy.upperhalf)),hy.upperhalf)
 
+            tools.plot_congruent(plt, onaught.vertices, color='gray')
+            plt.show()
+
+
+    def test_gridspace(self):
+        onaught = test_base.omega_for_dual
+        onaught.gridspace(0.5)
 if __name__ == '__main__':
     unittest.main()

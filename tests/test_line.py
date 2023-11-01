@@ -185,7 +185,7 @@ class MyTestCase(unittest.TestCase):
                                   (-.5, 0.8),
                                   (-.8, 0.3),
                                   (-.7, -.2)])
-        center = o.polygon.center()
+        center = o..center()
         from matplotlib.colors import TABLEAU_COLORS as COLORS
         COLORS = list(COLORS.values()) + [None]
         for ji in range(180):

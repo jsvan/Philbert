@@ -360,8 +360,8 @@ class PolarTests(unittest.TestCase):
         #
         #
 
-        plt.subplot(1, 3, 3)#, xlim=(min(orgx, o.polygon.offset[0]-1) - 1, max(orgx, o.polygon.offset[0] + 1) + 1),
-                   # ylim=(min(orgy, o.polygon.offset[1] - 6) - 0.5, max(orgy, o.polygon.offset[1] + 1) + 0.5))
+        plt.subplot(1, 3, 3)#, xlim=(min(orgx, o..offset[0]-1) - 1, max(orgx, o..offset[0] + 1) + 1),
+                   # ylim=(min(orgy, o..offset[1] - 6) - 0.5, max(orgy, o..offset[1] + 1) + 0.5))
         plt.title("Polar Dual")
         for point in blues:
             plt.axline(*Polar.to_line(point), color='lightblue', zorder=-1000)
@@ -473,8 +473,8 @@ class PolarTests(unittest.TestCase):
         #
         #
 
-        plt.subplot(1, 3, 3, xlim=(min(orgx, o.polygon.offset[0] - 1) - 1, max(orgx, o.polygon.offset[0] + 1) + 3),
-                    ylim=(min(orgy, o.polygon.offset[1] - 6) - 0.5, max(orgy, o.polygon.offset[1] + 1) + 5.5))
+        plt.subplot(1, 3, 3, xlim=(min(orgx, o..offset[0] - 1) - 1, max(orgx, o..offset[0] + 1) + 3),
+                    ylim=(min(orgy, o..offset[1] - 6) - 0.5, max(orgy, o..offset[1] + 1) + 5.5))
         plt.title("Polar Dual")
         for point in blues:
             plt.axline(*Polar.to_line(point), color='lightblue', zorder=-1000)
@@ -591,8 +591,8 @@ class PolarTests(unittest.TestCase):
         #
         #
 
-        plt.subplot(1, 3, 3, xlim=(min(orgx, o.polygon.offset[0]-1) - 1, max(orgx, o.polygon.offset[0] + 1) + 3),
-                    ylim=(min(orgy, o.polygon.offset[1] - 6) - 0.5, max(orgy, o.polygon.offset[1] + 1) + 5.5))
+        plt.subplot(1, 3, 3, xlim=(min(orgx, o..offset[0]-1) - 1, max(orgx, o..offset[0] + 1) + 3),
+                    ylim=(min(orgy, o..offset[1] - 6) - 0.5, max(orgy, o..offset[1] + 1) + 5.5))
         plt.title("Polar Dual")
         for i, point in enumerate(svs):
             linestyle = 'dotted' if i%2==0 else "dashed"
@@ -650,7 +650,7 @@ class PolarWedgeTests(unittest.TestCase):
         print(f"p {p}, q {q}, r {r}")
         pp, pq, pr = Polar.to_line(p), Polar.to_line(q), Polar.to_line(r)
 
-        po = polygon.Polygon(o.vertices_coords(), polarize=True)
+        po = Polar.polygon(o.vertices_coords())
         ppintersections = [euclidean.intersect(pp, [po.v(i).v, po.v(ii).v]) for i, ii in tools.i_ii(len(po))]
         pqintersections = [euclidean.intersect(pq, [po.v(i).v, po.v(ii).v]) for i, ii in tools.i_ii(len(po))]
         printersections = [euclidean.intersect(pr, [po.v(i).v, po.v(ii).v]) for i, ii in tools.i_ii(len(po))]
@@ -808,8 +808,8 @@ class PolarWedgeTests(unittest.TestCase):
         #
         #
 
-        plt.subplot(1, 3, 3, xlim=(min(orgx, o.polygon.offset[0] - 1) - 1, max(orgx, o.polygon.offset[0] + 1) + 3),
-                    ylim=(min(orgy, o.polygon.offset[1] - 6) - 0.5, max(orgy, o.polygon.offset[1] + 1) + 5.5))
+        plt.subplot(1, 3, 3, xlim=(min(orgx, o..offset[0] - 1) - 1, max(orgx, o..offset[0] + 1) + 3),
+                    ylim=(min(orgy, o..offset[1] - 6) - 0.5, max(orgy, o..offset[1] + 1) + 5.5))
         plt.title("Polar Dual")
 
         for i, v in enumerate(o.vertices):

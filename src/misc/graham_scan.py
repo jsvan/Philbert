@@ -36,6 +36,8 @@ def polar_comparator(p1, p2, p0):
 
 
 def graham_scan(points):
+    if points is None:
+        return
     # let p0 be the point with minimum y-coordinate,
     # or the leftmost such point in case of a tie
     p0, index = find_min_y(points)

@@ -63,7 +63,7 @@ class Line:
 
     def get_boundaries(self):
         if self.boundaries is None:
-            self.boundaries = self.omega.polygon.line_boundaries(self.p, self.q)
+            self.boundaries = self.omega.line_boundaries(self.p, self.q)
         return self.boundaries
 
     def get_hdist(self):
@@ -148,7 +148,7 @@ class Line:
         connections = []
         # First divide vertices into two groups
         # separate omega
-        points_above_l, points_below_l = self.omega.polygon.halves(self)
+        points_above_l, points_below_l = self.omega.halves(self)
         connect_tangents(points_above_l, points_below_l, plt)
         connect_tangents(points_below_l, points_above_l, plt)
         self.ball_spokes = connections
@@ -190,7 +190,7 @@ class Line:
             hilbert_ball = self.hilbert_ball_about_line(radius)
 
         yooksball, zooksball = hilbert_ball.halves(self)
-        yooksomeg, zooksomeg = self.omega.polygon.halves(self)
+        yooksomeg, zooksomeg = self.omega.halves(self)
         # Getting ball spokes is hard, but it will help triangulate the space better
         spokemap = defaultdict(int)
         # Using spokes mihgt not be necessary, but I know at least with them

@@ -1,10 +1,9 @@
 import unittest
 import test_base
-from hilbert import geometry, omega, polygon, line
 from matplotlib import pyplot as plt
 from misc import tools, euclidean
+from hilbert import polygon, line
 from misc.dual import Polar, Sectors
-import numpy as np
 
 class MyTestCase(unittest.TestCase):
     def test_wedges(self):
@@ -73,12 +72,80 @@ class MyTestCase(unittest.TestCase):
         plt.show()
 
 
+    def test_three_pseudohyperbola(self):
+        onaught = test_base.omega_for_dual
+        naughts = list(map(Polar.to_line, tools.rand_points(3)))
+        sectors = list(map(lambda x: Sectors(x, onaught), naughts))
+
+        for ii in range(1, 400):
+            print('\r', ii, '/ 400', flush=True)
+            radius = ii / 200
+            pseudohyperbolas = map(lambda x: x.pseudohyperbola(radius), sectors)
+            tools.plot_congruent(plt, onaught.vertices, color='gray')
+            for i, hy in enumerate(pseudohyperbolas):
+                tools.scatter(plt, hy[0], colors=[tools.COLORS[i]])
+                tools.scatter(plt, hy[1], colors=[tools.COLORS[i]])
+                tools.plot_line(plt, *naughts[i], color=tools.COLORS[i], axline=True)
+            plt.xlim(-25, 25)
+            plt.ylim(-25, 25)
+            #tools.save_movie_frame(plt, ii)
+            plt.show()
+        #tools.finish_movie("growing_hyperboloids")
+
+
+    def test_three_hyperbola_intersections(self):
+        import time
+        lasttime = time.time()
+        onaught = test_base.omega_for_dual
+        naughts = [Polar.to_line(x) for x in tools.rand_points(3)]
+        sectors = [Sectors(x, onaught) for x in naughts]
+        #intersections = []
+        halvedpolygons = [polygon.HalvedPolygon(None, None), polygon.HalvedPolygon(None, None), polygon.HalvedPolygon(None, None)]
+        for ii in range(1, 400):
+            print('\r', ii, '/ 300', ' time of',time.time()-lasttime, end='', flush=True)
+            lasttime = time.time()
+            radius = ii / 150
+            pseudohyperbolas = [x.pseudohyperbola(radius, halvedpolygons[i]) for i, x in enumerate(sectors)]
+            intersections, newinters = pseudohyperbolas[0].intersections(pseudohyperbolas[1])
+            tools.plot_congruent(plt, onaught.vertices, color='gray')
+            for i, hy in enumerate(pseudohyperbolas):
+                hy.plot_congruent(plt, color=tools.COLORS[i])
+                tools.plot_line(plt, *naughts[i], color=tools.COLORS[i], axline=True)
+            #tools.scatter_every_x(plt, intersections, x=ii, colors=['pink'], size=1)
+            tools.scatter(plt, intersections, colors=['magenta'], size=1)
+            plt.xlim(-25, 25)
+            plt.ylim(-25, 25)
+            tools.save_movie_frame(plt, ii)
+        tools.finish_movie("intersecting_hyperboloids")
 
 
 
 
+    def test_three_wedges(self):
+        onaught = test_base.omega_for_dual
+        j, g = tools.rand_points(2)
+        mainline = line.Line(j, g, test_base.primal_omega_weird)
+        ball = mainline.hilbert_ball_about_line(1.1)
+        p, q, r = ball.sample_from_ball_border(3, mainline)
 
+        pnaught, qnaught, rnaught = Polar.to_line(p), Polar.to_line(q), Polar.to_line(r)
+        psectors = Sectors(pnaught, onaught)
+        qsectors = Sectors(qnaught, onaught)
+        rsectors = Sectors(rnaught, onaught)
 
+        for i, sectors in enumerate([psectors,qsectors,rsectors]):
+            for s in sectors.sektoren:
+                tools.plot_line(plt, *s.wedge.line_a, axline=True, color=tools.COLORS[i])
+                tools.plot_line(plt, *s.wedge.line_b, axline=True, color=tools.COLORS[i], linewidth=3-i)
+        for v in onaught.vertices:
+            for vv in onaught.vertices:
+                tools.plot_line(plt, v, vv, color='white', linewidth=3.1)
+
+        tools.plot_congruent(plt, onaught.vertices, color='gray')
+        tools.scatter(plt, [Polar.to_point(mainline.l)], colors=['magenta'], size=5)
+        plt.xlim(-16, 16)
+        plt.ylim(-16, 16)
+        plt.show()
 
 
 if __name__ == '__main__':

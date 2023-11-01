@@ -14,7 +14,6 @@ Before showing, use
 plt.tight_layout()
 """
 
-
 @dataclass
 class Wedge:
     line_a: BasicLine
@@ -34,6 +33,180 @@ class SectorAssoc:
     oXp: Point
     wedge: Wedge
 
+@dataclass
+class WedgeRegion:
+    sector: SectorAssoc
+    polygon: polygon.Polygon
+
+
+
+
+class Sectors:
+
+    def __init__(self, pnaught, omeganaught):
+
+        """
+        variables:
+          omega
+          p-naught
+          intersections of omega onto p-naught
+          wedges: p-naught to edge and tangent
+
+        All items will be i indexed
+        functions:
+          hilbert ball/wave/pseudospline from given radius
+          how:
+            finds where intersection point intersects each sector, using the prev intersection point
+        """
+        self.p = pnaught
+        self.o = omeganaught
+        # List of where omega's edges rays intersect our pnaught
+        self.sektoren = [self.sektorieren(i) for i in range(len(self.o))]
+        # Wedge lines should NOT overlap. Each wedgeline_a represents the start of the boundary declared by its wedge.
+        # Wedgeline_a[0] is the x coordinate of the first wedgeline.
+        # Sorting this is as good as sorting the wedges.
+        self.sektoren.sort(key=lambda sektor: sektor.wedge.aXp[0])
+
+
+    def wedges_to_mosaic(self, boundary_radius):
+        X, Y = 0, 1
+        regions = []
+        bottomleftbound = euclidean.Vertex((-boundary_radius, -boundary_radius), 0)
+        bottomrightbound = euclidean.Vertex((boundary_radius, -boundary_radius), 1)
+        topleftbound = euclidean.Vertex((-boundary_radius, boundary_radius), 2)
+        toprightbound = euclidean.Vertex((boundary_radius, boundary_radius), 3)
+        bottombound = euclidean.Edge(bottomleftbound, bottomrightbound)
+        topbound = euclidean.Edge(topleftbound, toprightbound)
+        leftbound = euclidean.Edge(bottomleftbound, topleftbound)
+        rightbound = euclidean.Edge(bottomrightbound, toprightbound)
+        boundaries = [bottombound, leftbound, topbound, rightbound]
+        def intersect_boundaries(l):
+            intersections = []
+            for b in boundaries:
+                intersect = euclidean.intersect(l, b)
+                #print(f"intersect { intersect}, which makes {abs(intersect[X])} and {abs(intersect[Y])}, and finally {tools.lte(abs(intersect[X]), boundary_radius)} and {tools.lte(abs(intersect[Y]), boundary_radius)}")
+                if tools.lte(abs(intersect[X]), boundary_radius) and tools.lte(abs(intersect[Y]), boundary_radius):
+                    intersections.append((intersect, b))
+                    if len(intersections) == 2:
+                        #print("success!")
+                        return intersections
+            print(f"Intersecting {l} with boundaries failed. I have {intersections} of length {len(intersections)}.")
+            return intersections
+        for sector in self.sektoren:
+            # Every wedge runs through omega and kinda has two sections. The one section is a triangle that begins
+            # at the omega's vertex. The second section is like the butt end of a triangle, that starts with an
+            # opposite edge. I am "Framing" the space with the bound lines. Therefore, each wedge defines two
+            # regions, dictated by the wedge lines and the boundary lines.
+            # The point of the wedge is always wedge.line_ab.b .
+            # Can take intersections of wedgelines with boundaries, and both should be oriented in the same direction.
+            # Attempt to intersect them with all four walls. Will have four points.
+
+            wla = sector.wedge.line_a
+            wlb = sector.wedge.line_b
+            wpoint = sector.wedge.line_a.b
+            # Each one is a tuple of (intersection, edge) (intersection, edge)
+            a_inters = intersect_boundaries(wla)
+            b_inters = intersect_boundaries(wlb)
+
+            # The points should pass a series of Orient tests to know do they belong to the pointy or flat end of
+            # the wedge.
+            # a group should have centerpoint, l_a.p, l_b.p be clockwise.
+            # Orient test to group point tuples:
+            # Uncompleted polygons. We still will need to correct their associations and then attach the wedge pts.
+            poly_a = [a_inters[0], b_inters[0]]
+            poly_b = [a_inters[1], b_inters[1]]
+            # Counter_CW is WRONG
+            if euclidean.orient(wpoint, a_inters[0][0], b_inters[0][0]) == euclidean.COUNTER_CW:
+                # switch the latter points
+                poly_a[1], poly_b[1] = poly_b[1], poly_a[1]
+
+            # Now, if the points are on different boundaries, that means that there should be a corner in the middle.
+            # Attach corners:
+            for poly in [poly_a, poly_b]:
+                edge_a = poly[0][1]
+                edge_b = poly[1][1]
+                poly[0] = poly[0][0]
+                poly[1] = poly[1][0]
+                if edge_a.point_a.i != edge_b.point_a.i:
+                    poly.append(edge_a.shared(edge_b).v)
+
+            # Now, we need to attach the wedge points.
+            # COUNTER_CW is CORRECT
+            if euclidean.orient(wpoint, poly_a[0], wlb.a) == euclidean.COUNTER_CW:
+                poly_a.append(wpoint)
+                poly_b.append(wla.a)
+                poly_b.append(wlb.a)
+
+            else:
+                poly_b.append(wpoint)
+                poly_a.append(wla.a)
+                poly_a.append(wlb.a)
+            regions.append(WedgeRegion(sector, polygon.Polygon(poly_a)))
+            regions.append(WedgeRegion(sector, polygon.Polygon(poly_b)))
+        return regions
+
+    def annotate_wedges(self, plt):
+        """
+        name all wedges by average wedgeline, on both the positive and negative side
+        point wedgelines
+        """
+        def sector_name(sektor):
+            # The b'th point is the tangent vertex always
+            # and it should be lowercase.
+            sektor.wedge.line_a.b.i
+
+
+
+        tools.annotate(plt, [s.wedge.line_a.a.i for s in self.sektoren])
+
+    def sektorieren(self, i):
+        o_edge = self.o.edge(i)
+        oXp = euclidean.intersect(self.p, o_edge)
+        o_i = self.o.i(i)
+        o_tangent = self.o.other_tangent(oXp, o_i)
+        oXp = euclidean.intersect(self.p, o_edge)
+        wedgeline_a = euclidean.BasicLine(o_edge.point_a, o_tangent)
+        wedgeline_b = euclidean.BasicLine(o_edge.point_b, o_tangent)
+
+        wedge = Wedge(wedgeline_a, wedgeline_b,
+                      euclidean.intersect(wedgeline_a, self.p),
+                      euclidean.intersect(wedgeline_b, self.p))
+        return SectorAssoc(o_edge, o_tangent, o_i, oXp, wedge)
+
+
+    def pseudohyperbola(self, radius, halvedpoly=None):
+        """
+        The algorithm I want, but it breaks because there are [nan, nan] intersection points which destroys the flow.
+        """
+        firstwedge = self.sektoren[0].wedge
+        pos_pt = geometry.hdist_to_euc(firstwedge.aXp, firstwedge.line_a.a, firstwedge.line_a.b, radius)
+        neg_pt = geometry.hdist_to_euc(firstwedge.aXp, firstwedge.line_a.a, firstwedge.line_a.b, -1 * radius)
+        pointsabove, pointsbelow = [], []
+        for sektor in self.sektoren[0:-1]:
+            line = sektor.wedge.line_b
+            pos_pt = euclidean.intersect((sektor.oXp, pos_pt), line)
+            neg_pt = euclidean.intersect((sektor.oXp, neg_pt), line)
+            if euclidean.point_below_line(pos_pt, self.p):
+                pointsbelow.append(pos_pt)
+            else:
+                pointsabove.append(pos_pt)
+            if euclidean.point_below_line(neg_pt, self.p):
+                pointsbelow.append(neg_pt)
+            else:
+                pointsabove.append(neg_pt)
+
+        if halvedpoly is None:
+            return polygon.HalvedPolygon(pointsabove, pointsbelow, dividingline=self.p)
+
+        halvedpoly.upperhalf = pointsabove
+        halvedpoly.lowerhalf = pointsbelow
+        halvedpoly.dividingline = self.p
+        return halvedpoly
+
+
+
+
+
 
 class Polar:
     """
@@ -42,6 +215,18 @@ class Polar:
     (a, b) --> ax + by = 1
     """
     origin = Point([0, 0])
+
+    @staticmethod
+    def polygon(vertices, offset=[0,0]):
+        vertices = [offset + np.array(v) for v in vertices]
+        vertices = Polar.v2v(vertices)
+        return polygon.Polygon(vertices)
+
+    @staticmethod
+    def omega(vertices, offset=[0,0]):
+        vertices = [offset + np.array(v) for v in vertices]
+        vertices = Polar.v2v(vertices)
+        return omega.Omega(vertices)
 
     @staticmethod
     def to_line(point):
@@ -117,7 +302,7 @@ class Polar:
         tools.plot_congruent(plt, zooks, color, connect_ends=len(yooks)<1, zorder=zorder, axline=axline, linewidth=linewidth)
 
     @staticmethod
-    def dist(lineP, lineQ, supportinglineA, supportinglineB):
+    def dist(lineP, lineQ, supportinglineA, supportinglineB, absoluteval=True):
         """
         uses cross ratio to determine distance
         All lines are arrays of two points
@@ -126,92 +311,26 @@ class Polar:
         Tested and works.
         """
         # Horizontal line
-        crosser = [Point([0, 0.5]), Point([1, 0.5])]
+        crosser = BasicLine(Point([0, 1]),
+                            Point([1, 1]))
 
-        p, q, A, B = [euclidean.intersect(crosser, l)[0] for l in [lineP, lineQ, supportinglineA, supportinglineB]]
-        return geometry.dist(p, q, A, B)
-
-
-
+        p, q, A, B = [euclidean.intersect(crosser, l) for l in [lineP, lineQ, supportinglineA, supportinglineB]]
+        return geometry.dist(p, q, A, B, absoluteval)
 
 
-class Sectors:
-
-    def __init__(self, pnaught, omeganaught):
-
+    @staticmethod
+    def derivative(lineq, lineA, lineB):
         """
-        variables:
-          omega
-          p-naught
-          intersections of omega onto p-naught
-          wedges: p-naught to edge and tangent
-
-        All items will be i indexed
-        functions:
-          hilbert ball/wave/pseudospline from given radius
-          how:
-            finds where intersection point intersects each sector, using the prev intersection point
+        If you put in lineA and lineB such that they all intersect at a point on p-naught, the derivative should be
+        the speed at which the point approaches pnaught
         """
-        self.p = pnaught
-        self.o = omeganaught
-        # List of where omega's edges rays intersect our pnaught
-        self.sektoren = [self.sektorieren(i) for i in range(len(self.o.polygon))]
-        # Wedge lines should NOT overlap. Each wedgeline_a represents the start of the boundary declared by its wedge.
-        # Wedgeline_a[0] is the x coordinate of the first wedgeline.
-        # Sorting this is as good as sorting the wedges.
-        self.sektoren.sort(key=lambda sektor: sektor.wedge.aXp[0])
-
-    def sektorieren(self, i):
-        o_edge = self.o.polygon.edge(i)
-        oXp = euclidean.intersect(self.p, o_edge)
-        o_i = self.o.polygon.i(i)
-        o_tangent = self.o.polygon.other_tangent(oXp, o_i)
-        oXp = euclidean.intersect(self.p, o_edge)
-        wedgeline_a = euclidean.BasicLine(o_edge.point_a, o_tangent)
-        wedgeline_b = euclidean.BasicLine(o_edge.point_b, o_tangent)
-
-        wedge = Wedge(wedgeline_a, wedgeline_b,
-                      euclidean.intersect(wedgeline_a, self.p),
-                      euclidean.intersect(wedgeline_b, self.p))
-        return SectorAssoc(o_edge, o_tangent, o_i, oXp, wedge)
+        # Horizontal line
+        crosser = BasicLine(Point([0, 1]),
+                            Point([1, 1]))
+        q, A, B = [euclidean.intersect(crosser, l) for l in [lineq, lineA, lineB]]
+        return geometry.derivative(q, A, B)
 
 
-    def pseudohyperbola(self, radius, plt=None):
-        """
-        The algorithm I want, but it breaks because there are [nan, nan] intersection points which destroys the flow.
-        """
-        firstwedge = self.sektoren[0].wedge
-        pos_pt = geometry.hdist_to_euc(firstwedge.aXp, firstwedge.line_a.a, firstwedge.line_a.b, radius)
-        neg_pt = geometry.hdist_to_euc(firstwedge.aXp, firstwedge.line_a.a, firstwedge.line_a.b, -1 * radius)
-        pos_list, neg_list = [pos_pt], [neg_pt]
-        for sektor in self.sektoren[0:]:
-            line = sektor.wedge.line_b
-            pos_pt = euclidean.intersect(BasicLine(sektor.oXp, pos_pt), line)
-            neg_pt = euclidean.intersect(BasicLine(sektor.oXp, neg_pt), line)
-            pos_list.append(pos_pt)
-            neg_list.append(neg_pt)
-
-        return pos_list, neg_list
-
-
-
-
-
-
-
-
-        """
-        Naive way, Also doesnt work.         
-        
-        pos_list, neg_list = [], []
-        for sektor in self.sektoren:
-            wedge = sektor.wedge
-            pos_list.append(geometry.hdist_to_euc(wedge.aXp, wedge.line_a.a, wedge.line_a.b, radius))
-            neg_list.append(geometry.hdist_to_euc(wedge.aXp, wedge.line_a.a, wedge.line_a.b, -1 * radius))
-            pos_list.append(geometry.hdist_to_euc(wedge.bXp, wedge.line_b.a, wedge.line_b.b, radius))
-            neg_list.append(geometry.hdist_to_euc(wedge.bXp, wedge.line_b.a, wedge.line_b.b, -1 * radius))
-        return pos_list, neg_list
-        """
 
 class Dual2:
     """

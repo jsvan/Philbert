@@ -1,20 +1,16 @@
 import numpy as np
-from misc import euclidean, tools, dual
-import src
-import hilbert
+from misc import euclidean, tools
 from hilbert import line
 from misc.graham_scan import graham_scan
 from misc.euclidean import Vertex, Edge, Point
 
 class Polygon:
 
-    def __init__(self, vertices, offset=[0, 0], polarize=False):
+    def __init__(self, vertices, offset=[0, 0]):
         self.offset = np.array(offset)
-        self.vertices = [self.offset + np.array(v) for v in vertices]
-        if polarize:
-            self.vertices = dual.Polar.v2v(self.vertices)
+        self.vertices = [np.array(v) + self.offset for v in vertices]
         self.vertices = [Vertex(v, i) for i, v in enumerate(graham_scan(self.vertices))]
-        self.vertices_expanded = [self.vertices[-1]] + self.vertices + [self.vertices[0]]
+        #self.vertices_expanded = [self.vertices[-1]] + self.vertices + [self.vertices[0]]
 
     def v(self, i):
         return self.vertices[self.i(i)]
@@ -160,18 +156,18 @@ class Polygon:
             print(f"p {point}, vm {vm}, v {v}, vp {vp}")
             minus_orientation = euclidean.orient(point, v, vm)
             plus_orientation = euclidean.orient(point, v, vp)
-            print(f"i-1 is {euclidean.dname(minus_orientation)}, f+1 is {euclidean.dname(plus_orientation)}")
+            print(f"i-1 is {euclidean.dirname(minus_orientation)}, f+1 is {euclidean.dirname(plus_orientation)}")
             if minus_orientation == wrong_orientation:
                 binarysearch.feedback(higher=maxwards)
                 print(
-                    f"i-1 is {euclidean.dname(minus_orientation)}, so going {'higher' if maxwards else 'lower'}.")
+                    f"i-1 is {euclidean.dirname(minus_orientation)}, so going {'higher' if maxwards else 'lower'}.")
 
                 continue
             if plus_orientation == wrong_orientation:
                 # Too far
                 binarysearch.feedback(higher=not maxwards)
                 print(
-                    f"i+1 is {euclidean.dname(plus_orientation)}, so going {'higher' if not maxwards else 'lower'}.")
+                    f"i+1 is {euclidean.dirname(plus_orientation)}, so going {'higher' if not maxwards else 'lower'}.")
 
                 continue
             return v
@@ -182,13 +178,9 @@ class Polygon:
         l is a line.Line, or two 2d numpy arrays like [np.a([x, y]), np.a([x, y])]
         returns two arrays of vertices of the polygon, for each side of line they're on
         """
-        print(f"Want {line.Line}, {type(l) is type(line.Line)} {type(line.Line) is type(l)}")
-        print(f"Polygon {type(l)}, {l}, {type(l) is line.Line}")
-
-        if isinstance(l, hilbert.line.Line):
+        if isinstance(l, line.Line):
             l = l.l
 
-        print(f"Polygon {type(l)}, {l}")
 
         points_above_l_before, points_below_l_before, points_above_l_after, points_below_l_after  = [], [], [], []
         loadingpoints = [points_above_l_before, points_below_l_before]
@@ -257,7 +249,7 @@ class Polygon:
         Run orientation tests to find intersections with boundaries. Log time search.
         :param p:
         :param q:
-        :return: two lines, each of two points.
+        :return: two Edges
         """
         return self.find_boundary(p, q), self.find_boundary(q, p)
 
@@ -272,3 +264,161 @@ class Polygon:
 
     def edge(self, i):
         return Edge(self.v(i), self.v(i + 1))
+
+    def annotate_edges(self, plt):
+        # Capitalized of the beforehand vertex
+        tools.annotate(plt, (tools.namer(i).upper() for i in range(len(self))), self.vertices)
+
+    def annotate_nodes(self, plt):
+        # lowercase
+        tools.annotate(plt, (tools.namer(i) for i in range(len(self))), (euclidean.avg_point(*e) for e in self.edges))
+
+    def intersections(self, other, prev_i):
+        pass
+
+    def sample_from_ball_border(self, n, l):
+        halves = self.halves(l)
+        points = []
+        dist = 0
+        above = True
+
+        while len(points) < n:
+            try:
+                p, newdist = euclidean.uniform_sample_from_line_segments(halves[above], dist)
+                above = not above
+                points.append(p)
+            except Exception as e:
+                print(e)
+                points = []
+                dist = 0
+                above = True
+        return points
+
+    """
+    Returns the points on a uniform grid of the space inside the polygon.
+    input: width is the vertical and horizontal distance between points. 
+    
+    Algorithm:
+        find Y upper and lower limits
+        then create horizontal lines and intersect them on the edges
+        The first line will be order edges time
+        every other line will look at the two neighbors 
+        Once you get the intersections, you can generate the points within.
+    """
+    def gridspace(self, width, plt=None):
+        X, Y = euclidean.X, euclidean.Y
+        tallest  = max(self.vertices, key=lambda v:v[Y])[Y]
+        shortest = min(self.vertices, key=lambda v:v[Y])[Y]
+
+        gridYs = tools.linspace(shortest, tallest, width)
+        gridY = gridYs[0]
+        bottomLine = euclidean.BasicLine(euclidean.Point((0, gridY)),
+                                         euclidean.Point((1, gridY)))
+        leftEdge, rightEdge = self.line_boundaries(*bottomLine)
+        bottomIdxs = leftEdge.point_a.i, rightEdge.point_a.i
+        leftintersect = euclidean.intersect(leftEdge, bottomLine)
+        rightintersect = euclidean.intersect(rightEdge, bottomLine)
+
+        # Adding the first items to start off with...
+        points = [Point((x, gridY)) for x in tools.linspace(leftintersect[X], rightintersect[X], width)]
+
+        for gridY in gridYs[1:]:
+            # Check to ensure correct edges, or iterate.
+            # If we're above, move left edge upwards (positive dir)
+            # and move right edge upwards (negative dir)
+            if gridY > leftEdge.point_b.v[Y]:
+                i = leftEdge.point_a.i
+                leftEdge = self.edge(i + 1)
+            if gridY > rightEdge.point_a.v[Y]:
+                i = rightEdge.point_a.i
+                rightEdge = self.edge(i - 1)
+
+            bottomLine = euclidean.BasicLine(euclidean.Point((0, gridY)),
+                                             euclidean.Point((1, gridY)))
+            #print(bottomLine)
+            leftintersect = euclidean.intersect(leftEdge, bottomLine)
+            rightintersect = euclidean.intersect(rightEdge, bottomLine)
+            if leftintersect is None or rightintersect is None:
+                continue
+
+            points += [Point((x, gridY)) for x in tools.linspace(leftintersect[X], rightintersect[X], width)]
+
+        if plt is not None:
+            print("maxs", tallest, shortest)
+            print("topidx", bottomIdxs)
+            print("grid", points)
+            print("omega", self.vertices)
+            tools.plot_congruent(plt, self.vertices, color='gray')
+            tools.annotate(plt, range(len(self)), self.vertices)
+            tools.plot_line(plt, *bottomLine, axline=True)
+            tools.scatter(plt, points)
+            plt.show()
+
+        return points
+
+
+
+
+
+
+
+
+
+"""
+
+Recommended usage is from dual.py 's Sectors 's pseudohyperbola(), which returns two halves of a circle around a
+polar dual line (a point in primal space)
+
+
+"""
+
+class HalvedPolygon:
+
+    def __init__(self, upperhalf, lowerhalf, dividingline=None):
+        self.dividingline = dividingline
+        self.upperhalf = upperhalf
+        self.lowerhalf = lowerhalf
+        print("before", self.upperhalf)
+        self.sort_points(self.upperhalf)
+        print("after", self.upperhalf)
+        self.sort_points(self.lowerhalf)
+
+
+    def sort_points(self, points):
+        if self.dividingline is not None:
+            for p in points:
+                p.t = euclidean.line_get_t(euclidean.closest_point_on_line(p, self.dividingline), self.dividingline)
+            points.sort(key=lambda p: p.t)
+
+    # the bespoke "...the fuck is efficiency?" algorithm
+    def intersections(self, other, intersections=[]):
+        count = len(intersections)
+        for sa, sb in self.iter_all_edges():
+            selfedge = euclidean.BasicLine(sa, sb)
+            for oa, ob in other.iter_all_edges():
+                otheredge = euclidean.BasicLine(oa, ob)
+                if euclidean.line_intersects_on_segments(selfedge, otheredge):
+                    intersections.append(euclidean.intersect(selfedge, otheredge))
+        return intersections, len(intersections) - count
+
+
+    """
+        #For each half of our polygon
+        for half_i, selfhalf in enumerate(self.halves):
+            # Compare against every edge of the other polygon
+            for v in range(len(selfhalf) - 1):
+                selfedge = euclidean.BasicLine(selfhalf[v], selfhalf[v + 1])
+                for j in range(len(other.upperhalf) - 1):
+                    otheredge = euclidean.BasicLine(self.upperhalf[v], self.upperhalf[v + 1])
+                    if euclidean.line_intersects_on_segments(selfedge, otheredge):
+                        self.intersections[half_i].append(euclidean.intersect(selfedge, otheredge))
+    """
+    def iter_all_edges(self):
+        for i in range(len(self.upperhalf) - 1):
+            yield self.upperhalf[i], self.upperhalf[i + 1]
+        for i in range(len(self.lowerhalf) - 1):
+            yield self.lowerhalf[i], self.lowerhalf[i + 1]
+
+    def plot_congruent(self, plt, color):
+        tools.plot_congruent(plt, self.upperhalf, connect_ends=False, color=color)
+        tools.plot_congruent(plt, self.lowerhalf, connect_ends=False, color=color)

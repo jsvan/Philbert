@@ -29,6 +29,8 @@ class Point:
         return len(self.v)
     def __repr__(self):
         return f"Point {self.v}"
+    def __hash__(self):
+        return tuple(self.v).__hash__()
     def __add__(self, other):
         if type(other) is Point:
             other = other.v
@@ -61,11 +63,11 @@ class Point:
 class BasicLine:
     a: Point
     b: Point
+    norm: Point = None
     def __iter__(self):
         return iter((self.a, self.b))
     def __getitem__(self, item):
         return self.b if item else self.a
-
 @dataclass
 class Vertex(Point):
     i: int
@@ -81,8 +83,14 @@ class Edge:
         return iter((self.point_a, self.point_b))
     def __getitem__(self, item):
         return self.point_b if item else self.point_a
+    def shared(self, other):
+        for ov in other:
+            for sv in self:
+                if ov.i == sv.i:
+                    return sv
+        return None
 
-def dname(w):
+def dirname(w):
     if w == COUNTER_CW:
         return "COUNTER_CW"
     if w == CLOCKWISE:
@@ -166,20 +174,35 @@ def intersect(line_a, line_b):
     using determinants (following code). Better way?
     https://mathworld.wolfram.com/Line-LineIntersection.html
     """
-
     (x1, y1), (x2, y2) = line_a
     (x3, y3), (x4, y4) = line_b
+
+    # if xy12 and xy34 is a multiple, it is the same line.
     xy12 = det(x1, y1, x2, y2)
     xy34 = det(x3, y3, x4, y4)
     x1m2 = x1 - x2
     x3m4 = x3 - x4
     y1m2 = y1 - y2
     y3m4 = y3 - y4
+    # denominator is 0 if parallel lines.
     denominator = det(x1m2, y1m2, x3m4, y3m4)
+    if np.isclose(denominator, 0):
+        return None
     x = det(xy12, x1m2, xy34, x3m4) / denominator
     y = det(xy12, y1m2, xy34, y3m4) / denominator
     return Point([x, y])
 
+"""
+Return boolean True if lines are the same line, False if not the same line.
+"""
+def same_line(line_a, line_b):
+    (x1, y1), (x2, y2) = line_a
+    (x3, y3), (x4, y4) = line_b
+    xy12 = det(x1, y1, x2, y2)
+    xy34 = det(x3, y3, x4, y4)
+
+    m = (xy34 / xy12) % 1
+    return np.isclose(m, 0) or np.isclose(m, 1)
 
 def line_segment_normal(p, q):
     dx, dy = p - q
@@ -216,6 +239,16 @@ def point_within_region(p, A, B):
             return False
     return True
 
+def line_intersects_on_segments(linea, lineb):
+    aa = orient(linea[0], *lineb)
+    ab = orient(linea[1], *lineb)
+    if aa + ab != 0:
+        return False
+    ba = orient(lineb[0], *linea)
+    bb = orient(lineb[1], *linea)
+    return ba + bb == 0
+
+
 
 def eq(p1, p2):
     if p1 is None or p2 is None or p1.v is None or p2.v is None:
@@ -231,7 +264,7 @@ def get_point_on_line(p, q, dist):
     dist==1 is point q
     """
     slope = q - p
-    return p + dist * slope
+    return p + slope * dist
 
 
 def uniform_sample_from_line_segments(segs, startfloor=0):
@@ -267,6 +300,37 @@ def circle_point(i, divisions):
     Probably a stupid method, but it will give you the ith point around a 'circle'.
     I use this for a line that spins around.
     """
-
     sliced = TWO_PI * (i / divisions)
     return np.array([math.cos(sliced), math.sin(sliced)])
+
+"""
+Returns the point on the line that is closest/perpendicular to 'point'
+"""
+def closest_point_on_line(point, the_line):
+    if the_line.norm is None:
+        the_line.norm = line_segment_normal(*the_line)[0]
+    return intersect((point, the_line.norm), the_line)
+
+"""
+
+"""
+def line_get_t(point, the_line):
+    t = (point - the_line[0]) / the_line[1]
+    #print(point, t[1])
+    return t[1]
+
+def slope(the_line):
+    return (the_line[1][Y] - the_line[0][Y]) / (the_line[1][X] - the_line[0][X])
+
+def intercept(the_line, slope):
+    return the_line[0][Y] - slope * the_line[0][X]
+
+def avg_line(linea, lineb):
+    bm = slope(lineb)
+    bi = intercept(lineb, bm)
+    y1 = (linea[0][Y] + (bm * linea[0][X]) + bi) / 2
+    y2 = (linea[1][Y] + (bm * linea[1][X]) + bi) / 2
+    return BasicLine(Point((linea[0][X], y1)), Point((linea[1][X], y2)))
+
+def avg_point(pa, pb):
+    return (pa + pb) / 2
